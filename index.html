@@ -92,6 +92,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            font-size: clamp(14px, 2.75vw, 16px);
+        }
+
         html, body {
             margin: 0;
             padding: 0;
@@ -106,7 +110,7 @@
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: "kern" "liga" "tnum";
-            font-size: 15px;
+            font-size: 1rem;
             line-height: 1.5;
         }
         
@@ -121,7 +125,12 @@
             max-width: 1000px;
             margin: 0 auto;
             background: var(--bg-app);
-            min-height: 100dvh;
+            height: 100dvh;
+            max-height: 100dvh;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             box-shadow: 0 0 0 1px var(--shadow-app);
             transition: background-color 0.2s ease, box-shadow 0.2s ease;
         }
@@ -150,6 +159,7 @@
         }
 
         .app-topbar {
+            flex-shrink: 0;
             position: sticky;
             top: 0;
             z-index: 50;
@@ -256,7 +266,15 @@
         .space-y-4 > * + * { margin-top: 1rem; }
         .space-y-5 > * + * { margin-top: 1.25rem; }
         .max-w-md { max-width: 28rem; }
+        .max-w-lg { max-width: 32rem; }
+        .min-h-0 { min-height: 0; }
         .mx-auto { margin-left: auto; margin-right: auto; }
+        .content-width {
+            width: 100%;
+            max-width: min(32rem, 100%);
+            margin-left: auto;
+            margin-right: auto;
+        }
         .mt-1 { margin-top: 0.25rem; }
         .mt-3 { margin-top: 0.75rem; }
         .mt-4 { margin-top: 1rem; }
@@ -373,6 +391,33 @@
 
         .metric-value {
             font-variant-numeric: tabular-nums;
+        }
+
+        .metric-hero {
+            font-size: clamp(1.75rem, 8vw, 3rem);
+            line-height: 1.1;
+        }
+
+        .app-scroll-pane,
+        .ride-shell-body {
+            flex: 1 1 0%;
+            min-height: 0;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding-bottom: max(1rem, var(--safe-bottom));
+        }
+
+        .ride-shell {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 0%;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .ride-shell-head {
+            flex-shrink: 0;
         }
 
         .touch-target {
@@ -618,6 +663,11 @@
         #app {
             width: 100%;
             min-width: 0;
+            flex: 1 1 0%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         #app img, #app video, #app table {
@@ -677,7 +727,7 @@
     </style>
 </head>
 <body class="bg-slate-950 text-white">
-    <div class="app-container mx-auto min-h-screen flex flex-col">
+    <div class="app-container mx-auto">
         <!-- Top Navigation -->
         <div class="app-topbar bg-slate-900 border-b border-slate-800 flex items-center justify-between">
             <div class="flex items-center gap-x-3 min-w-0 flex-1">
@@ -700,7 +750,7 @@
         </div>
 
         <!-- Main Content -->
-        <div id="app" class="flex-1 overflow-auto">
+        <div id="app" class="flex-1 min-h-0">
             <!-- Content rendered by JS -->
         </div>
 
@@ -1561,6 +1611,7 @@
             }, 0);
             
             let html = `
+                <div class="app-scroll-pane">
                 <div class="p-5 pb-8">
                     <!-- Header Stats -->
                     <div class="grid grid-cols-3 gap-3 mb-6">
@@ -1666,7 +1717,7 @@
                 html += `</div>`;
             }
             
-            html += `</div>`;
+            html += `</div></div>`;
             return html;
         }
 
@@ -1682,8 +1733,10 @@
             const unstartedCount = getUnstartedStops(ride).length;
             
             let html = `
+                <div class="ride-shell">
+                <div class="ride-shell-head">
                 <!-- Ride Header -->
-                <div class="bg-slate-900 border-b border-slate-700 px-5 py-4 sticky sticky-below-main z-40 ride-detail-header">
+                <div class="bg-slate-900 border-b border-slate-700 px-5 py-4 ride-detail-header">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-x-3 min-w-0 flex-1">
                             <button onclick="goHome()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white active:bg-slate-800 rounded-2xl">
@@ -1716,7 +1769,7 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="bg-slate-900 border-b border-slate-700 px-2 flex sticky sticky-below-ride z-40">
+                <div class="bg-slate-900 border-b border-slate-700 px-2 flex">
                     <div onclick="switchTab('stops')" class="nav-tab flex-1 text-center py-3 text-sm cursor-pointer ${state.currentTab === 'stops' ? 'active' : ''}">
                         <i class="fa-solid fa-list-check mr-2"></i>STOPS
                     </div>
@@ -1731,8 +1784,9 @@
                         <i class="fa-solid fa-chart-bar mr-2"></i>SUMMARY
                     </div>
                 </div>
+                </div>
 
-                <div class="p-5">
+                <div class="ride-shell-body p-5">
             `;
             
             // Tab content
@@ -1746,13 +1800,13 @@
                 html += getSummaryTabHTML(ride, stats);
             }
             
-            html += `</div>`;
+            html += `</div></div>`;
             return html;
         }
 
         function getInfoTabHTML(ride) {
             return `
-                <div class="max-w-md mx-auto">
+                <div class="content-width">
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 space-y-5">
                         <div>
                             <label class="form-label">Station / Zone</label>
@@ -1957,7 +2011,7 @@
 
         function getManifestTabHTML(ride, unstartedCount) {
             return `
-                <div class="max-w-md mx-auto">
+                <div class="content-width">
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 mb-5">
                         <div class="font-semibold mb-1 flex items-center gap-x-2">
                             <i class="fa-solid fa-file-import text-blue-400"></i>
@@ -2018,23 +2072,23 @@
 
         function getSummaryTabHTML(ride, stats) {
             return `
-                <div class="max-w-md mx-auto space-y-4">
+                <div class="content-width space-y-4">
                     <!-- Big Metrics -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
                             <div class="text-xs text-slate-400">TOTAL STOPS</div>
-                            <div class="text-5xl font-semibold mt-1 metric-value">${stats.totalStops}</div>
+                            <div class="font-semibold mt-1 metric-value metric-hero">${stats.totalStops}</div>
                         </div>
                         <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
                             <div class="text-xs text-slate-400">PACKAGES DELIVERED</div>
-                            <div class="text-5xl font-semibold mt-1 text-emerald-400 metric-value">${stats.totalPackages}</div>
+                            <div class="font-semibold mt-1 text-emerald-400 metric-value metric-hero">${stats.totalPackages}</div>
                         </div>
                     </div>
                     
                     <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
                         <div class="text-xs text-slate-400 mb-3">DRIVER RELEASE RATE</div>
                         <div class="flex items-end gap-x-3">
-                            <div class="text-5xl font-semibold metric-value">${stats.releasePct}<span class="text-2xl">%</span></div>
+                            <div class="font-semibold metric-value metric-hero">${stats.releasePct}<span class="text-2xl">%</span></div>
                             <div class="text-sm text-emerald-400 pb-1">${stats.releases} of ${stats.totalStops} stops</div>
                         </div>
                     </div>
