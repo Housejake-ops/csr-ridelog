@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('csr_theme');
+                if (theme) document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CSR</title>
     <meta name="description" content="CSR delivery ride logging — track stops, manifests, and route summaries.">
@@ -16,8 +24,62 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
         
-        :root {
+        :root,
+        [data-theme="dark"] {
             --primary: #3b82f6;
+            --bg-body: #020617;
+            --bg-app: #0f172a;
+            --bg-surface: #0f172a;
+            --bg-elevated: #1e2937;
+            --bg-muted: #334155;
+            --bg-input: #020617;
+            --border: #334155;
+            --border-subtle: #1e2937;
+            --border-input: #475569;
+            --text-primary: #ffffff;
+            --text-body: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-soft: #64748b;
+            --text-label: #cbd5e1;
+            --text-tab: #64748b;
+            --text-tab-active: #e0f2fe;
+            --shadow-app: #1e2937;
+            --overlay: rgb(0 0 0 / 0.7);
+            --stat-card: #1e2937;
+            --stop-active: #334155;
+            --manifest-hover: #334155;
+            --accent-section: #60a5fa;
+        }
+
+        [data-theme="light"] {
+            --bg-body: #e2e8f0;
+            --bg-app: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f1f5f9;
+            --bg-muted: #e2e8f0;
+            --bg-input: #ffffff;
+            --border: #cbd5e1;
+            --border-subtle: #e2e8f0;
+            --border-input: #94a3b8;
+            --text-primary: #0f172a;
+            --text-body: #1e293b;
+            --text-muted: #475569;
+            --text-soft: #64748b;
+            --text-label: #334155;
+            --text-tab: #64748b;
+            --text-tab-active: #1d4ed8;
+            --shadow-app: #cbd5e1;
+            --overlay: rgb(15 23 42 / 0.45);
+            --stat-card: #f1f5f9;
+            --stop-active: #e2e8f0;
+            --manifest-hover: #e2e8f0;
+            --accent-section: #2563eb;
+        }
+
+        html, body {
+            background: var(--bg-body);
+            color: var(--text-body);
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
 
         *, *::before, *::after {
@@ -54,9 +116,33 @@
             width: 100%;
             max-width: 1000px;
             margin: 0 auto;
-            background: #0f172a;
+            background: var(--bg-app);
             min-height: 100dvh;
-            box-shadow: 0 0 0 1px #1e2937;
+            box-shadow: 0 0 0 1px var(--shadow-app);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .theme-toggle-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-muted);
+        }
+
+        .theme-toggle-btn:active {
+            background: var(--bg-elevated);
         }
 
         /* Essential Tailwind utility fallbacks (for production, no CDN) */
@@ -93,26 +179,33 @@
         .font-semibold { font-weight: 600; }
         .font-bold { font-weight: 700; }
         .font-medium { font-weight: 500; }
-        .text-white { color: #ffffff; }
-        .text-slate-200 { color: #e2e8f0; }
-        .text-slate-400 { color: #94a3b8; }
-        .text-slate-500 { color: #64748b; }
-        .text-emerald-400 { color: #34d399; }
-        .text-blue-400 { color: #60a5fa; }
-        .text-amber-400 { color: #fbbf24; }
-        .bg-slate-900 { background-color: #0f172a; }
-        .bg-slate-800 { background-color: #1e2937; }
-        .bg-slate-700 { background-color: #334155; }
-        .bg-slate-950 { background-color: #020617; }
+        .text-white { color: var(--text-primary); }
+        .text-slate-200 { color: var(--text-label); }
+        .text-slate-300 { color: var(--text-label); }
+        .text-slate-400 { color: var(--text-muted); }
+        .text-slate-500 { color: var(--text-soft); }
+        .text-slate-600 { color: var(--text-soft); }
+        .text-slate-900 { color: #0f172a; }
+        .text-emerald-400 { color: #059669; }
+        [data-theme="dark"] .text-emerald-400 { color: #34d399; }
+        .text-blue-400 { color: #2563eb; }
+        [data-theme="dark"] .text-blue-400 { color: #60a5fa; }
+        .text-amber-400 { color: #d97706; }
+        [data-theme="dark"] .text-amber-400 { color: #fbbf24; }
+        .bg-slate-900 { background-color: var(--bg-surface); }
+        .bg-slate-800 { background-color: var(--bg-elevated); }
+        .bg-slate-700 { background-color: var(--bg-muted); }
+        .bg-slate-950 { background-color: var(--bg-input); }
+        .bg-black\/70 { background-color: var(--overlay); }
         .bg-blue-600 { background-color: #2563eb; }
         .bg-emerald-600 { background-color: #059669; }
         .bg-red-600 { background-color: #dc2626; }
         .border { border-width: 1px; }
         .border-b { border-bottom-width: 1px; }
         .border-t { border-top-width: 1px; }
-        .border-slate-700 { border-color: #334155; }
-        .border-slate-800 { border-color: #1e2937; }
-        .border-slate-600 { border-color: #475569; }
+        .border-slate-700 { border-color: var(--border); }
+        .border-slate-800 { border-color: var(--border-subtle); }
+        .border-slate-600 { border-color: var(--border-input); }
         .border-blue-500 { border-color: #3b82f6; }
         .rounded-2xl { border-radius: 1rem; }
         .rounded-3xl { border-radius: 1.5rem; }
@@ -121,9 +214,10 @@
         .cursor-pointer { cursor: pointer; }
         .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
         .hover\:bg-blue-500:hover { background-color: #3b82f6; }
-        .hover\:bg-slate-600:hover { background-color: #475569; }
+        .hover\:bg-slate-600:hover { background-color: var(--bg-muted); }
+        .hover\:text-white:hover { color: var(--text-primary); }
         .active\:bg-blue-700:active { background-color: #1d4ed8; }
-        .active\:bg-slate-800:active { background-color: #1e2937; }
+        .active\:bg-slate-800:active { background-color: var(--bg-elevated); }
         .grid { display: grid; }
         .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
         .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -188,8 +282,8 @@
         }
 
         .stat-card {
-            background: #1e2937;
-            transition: transform 0.2s ease;
+            background: var(--stat-card);
+            transition: transform 0.2s ease, background-color 0.2s ease;
         }
 
         .stop-card {
@@ -197,19 +291,19 @@
         }
 
         .stop-card:active {
-            background-color: #334155;
+            background-color: var(--stop-active);
         }
 
         .nav-tab {
             position: relative;
             padding-bottom: 0.75rem;
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-tab);
             transition: all 0.2s ease;
         }
         
         .nav-tab.active {
-            color: #e0f2fe;
+            color: var(--text-tab-active);
         }
         
         .nav-tab.active:after {
@@ -243,9 +337,9 @@
         }
 
         .data-table th {
-            background: #1e2937;
+            background: var(--bg-elevated);
             font-weight: 600;
-            color: #94a3b8;
+            color: var(--text-muted);
         }
 
         .metric-value {
@@ -275,7 +369,7 @@
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 1.0625rem;
             font-weight: 500;
-            color: #f1f5f9;
+            color: var(--text-body);
             line-height: 1.5;
             letter-spacing: 0.01em;
             min-height: 48px;
@@ -289,7 +383,7 @@
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 1.0625rem;
             font-weight: 500;
-            color: #f1f5f9;
+            color: var(--text-body);
             line-height: 1.5;
             letter-spacing: 0.01em;
         }
@@ -307,20 +401,20 @@
 
         .app-container input::placeholder,
         .app-container textarea::placeholder {
-            color: #64748b;
+            color: var(--text-soft);
             opacity: 1;
         }
 
         .app-container select option {
-            background: #1e293b;
-            color: #f1f5f9;
+            background: var(--bg-surface);
+            color: var(--text-body);
             font-size: 1rem;
         }
 
         .form-label {
             font-size: 0.9375rem;
             font-weight: 600;
-            color: #cbd5e1;
+            color: var(--text-label);
             margin-bottom: 0.375rem;
             display: block;
             letter-spacing: 0.01em;
@@ -330,7 +424,7 @@
             font-size: 0.8125rem;
             font-weight: 700;
             letter-spacing: 0.08em;
-            color: #60a5fa;
+            color: var(--accent-section);
             margin-bottom: 0.5rem;
             text-transform: uppercase;
         }
@@ -338,14 +432,14 @@
         .field-text {
             font-size: 0.9375rem;
             font-weight: 600;
-            color: #f1f5f9;
+            color: var(--text-body);
             line-height: 1.4;
         }
 
         .field-meta {
             font-size: 0.875rem;
             font-weight: 500;
-            color: #cbd5e1;
+            color: var(--text-muted);
             line-height: 1.4;
         }
 
@@ -360,7 +454,7 @@
         }
 
         .manifest-stop:hover {
-            background-color: #334155;
+            background-color: var(--manifest-hover);
         }
 
         .font-mono,
@@ -389,13 +483,13 @@
             display: flex;
             align-items: center;
             padding: 0.625rem 0.75rem;
-            background: #020617;
-            border: 1px solid #475569;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
             border-radius: 1rem;
         }
 
         .lap-time-display.is-empty {
-            color: #64748b;
+            color: var(--text-soft);
             font-size: 0.9375rem;
             font-weight: 500;
         }
@@ -414,7 +508,7 @@
             font-feature-settings: "tnum" 1;
             font-size: 1.0625rem;
             font-weight: 500;
-            color: #f1f5f9;
+            color: var(--text-body);
             letter-spacing: 0.03em;
             line-height: 1.5;
             min-height: 48px;
@@ -423,7 +517,7 @@
         .time-input::-webkit-datetime-edit,
         input[type="date"].time-input::-webkit-datetime-edit,
         input[type="date"].large-input::-webkit-datetime-edit {
-            color: #f1f5f9;
+            color: var(--text-body);
             font-size: 1.0625rem;
             padding: 0;
         }
@@ -448,7 +542,7 @@
         input[type="date"].large-input::-webkit-datetime-edit-month-field,
         input[type="date"].large-input::-webkit-datetime-edit-day-field,
         input[type="date"].large-input::-webkit-datetime-edit-year-field {
-            color: #f1f5f9;
+            color: var(--text-body);
             font-size: 1.0625rem;
             font-weight: 500;
             padding: 2px 3px;
@@ -464,9 +558,15 @@
         input[type="date"]::-webkit-datetime-edit-month-field:focus,
         input[type="date"]::-webkit-datetime-edit-day-field:focus,
         input[type="date"]::-webkit-datetime-edit-year-field:focus {
-            background-color: #334155;
-            color: #ffffff;
+            background-color: var(--bg-muted);
+            color: var(--text-primary);
             outline: none;
+        }
+
+        [data-theme="light"] .time-input::-webkit-calendar-picker-indicator,
+        [data-theme="light"] input[type="date"].time-input::-webkit-calendar-picker-indicator,
+        [data-theme="light"] input[type="date"].large-input::-webkit-calendar-picker-indicator {
+            filter: none;
         }
 
         .time-input::-webkit-calendar-picker-indicator,
@@ -560,8 +660,13 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-x-2" id="top-nav-actions">
-                <!-- Dynamic actions injected by JS -->
+            <div class="flex items-center gap-x-2">
+                <button type="button" id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Switch day or night mode" title="Day / Night">
+                    <i id="theme-toggle-icon" class="fa-solid fa-sun text-lg"></i>
+                </button>
+                <div class="flex items-center gap-x-2" id="top-nav-actions">
+                    <!-- Dynamic actions injected by JS -->
+                </div>
             </div>
         </div>
 
@@ -591,7 +696,41 @@
         };
 
         const STORAGE_KEY = 'csrRidelog_v2';
+        const THEME_KEY = 'csr_theme';
         let storageAvailable = true;
+
+        function getStoredTheme() {
+            try {
+                return localStorage.getItem(THEME_KEY) || 'dark';
+            } catch (e) {
+                return 'dark';
+            }
+        }
+
+        function applyTheme(theme) {
+            const nextTheme = theme === 'light' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+
+            const icon = document.getElementById('theme-toggle-icon');
+            if (icon) {
+                icon.className = nextTheme === 'light'
+                    ? 'fa-solid fa-moon text-lg'
+                    : 'fa-solid fa-sun text-lg';
+            }
+
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) {
+                metaTheme.content = nextTheme === 'light' ? '#f8fafc' : '#0f172a';
+            }
+
+            try {
+                localStorage.setItem(THEME_KEY, nextTheme);
+            } catch (e) {}
+        }
+
+        function toggleTheme() {
+            applyTheme(getStoredTheme() === 'light' ? 'dark' : 'light');
+        }
 
         function formatDateTimeLocalValue(value) {
             if (value == null || value === '') return '';
@@ -2565,6 +2704,7 @@
         }
 
         function initializeApp() {
+            applyTheme(document.documentElement.getAttribute('data-theme') || getStoredTheme());
             loadState();
             
             // Render initial view
