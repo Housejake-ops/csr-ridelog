@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CSR</title>
+    <meta name="description" content="CSR delivery ride logging — track stops, manifests, and route summaries.">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CSR">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            font-feature-settings: "kern" "liga" "tnum";
+            font-size: 15px;
+            line-height: 1.5;
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', system_ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #0f172a;
+            min-height: 100dvh;
+            box-shadow: 0 0 0 1px #1e2937;
+        }
+
+        /* Essential Tailwind utility fallbacks (for production, no CDN) */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-wrap { flex-wrap: wrap; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .items-end { align-items: flex-end; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-x-2 { column-gap: 0.5rem; }
+        .gap-x-3 { column-gap: 0.75rem; }
+        .gap-x-5 { column-gap: 1.25rem; }
+        .p-4 { padding: 1rem; }
+        .p-5 { padding: 1.25rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-3\.5 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .text-5xl { font-size: 3rem; line-height: 1; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
+        .text-white { color: #ffffff; }
+        .text-slate-200 { color: #e2e8f0; }
+        .text-slate-400 { color: #94a3b8; }
+        .text-slate-500 { color: #64748b; }
+        .text-emerald-400 { color: #34d399; }
+        .text-blue-400 { color: #60a5fa; }
+        .text-amber-400 { color: #fbbf24; }
+        .bg-slate-900 { background-color: #0f172a; }
+        .bg-slate-800 { background-color: #1e2937; }
+        .bg-slate-700 { background-color: #334155; }
+        .bg-slate-950 { background-color: #020617; }
+        .bg-blue-600 { background-color: #2563eb; }
+        .bg-emerald-600 { background-color: #059669; }
+        .bg-red-600 { background-color: #dc2626; }
+        .border { border-width: 1px; }
+        .border-b { border-bottom-width: 1px; }
+        .border-t { border-top-width: 1px; }
+        .border-slate-700 { border-color: #334155; }
+        .border-slate-800 { border-color: #1e2937; }
+        .border-slate-600 { border-color: #475569; }
+        .border-blue-500 { border-color: #3b82f6; }
+        .rounded-2xl { border-radius: 1rem; }
+        .rounded-3xl { border-radius: 1.5rem; }
+        .rounded-full { border-radius: 9999px; }
+        .shadow { box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
+        .cursor-pointer { cursor: pointer; }
+        .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .hover\:bg-blue-500:hover { background-color: #3b82f6; }
+        .hover\:bg-slate-600:hover { background-color: #475569; }
+        .active\:bg-blue-700:active { background-color: #1d4ed8; }
+        .active\:bg-slate-800:active { background-color: #1e2937; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .col-span-2 { grid-column: span 2 / span 2; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .space-y-5 > * + * { margin-top: 1.25rem; }
+        .max-w-md { max-width: 28rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-5 { margin-bottom: 1.25rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .min-w-0 { min-width: 0px; }
+        .flex-1 { flex: 1 1 0%; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .w-full { width: 100%; }
+        .w-9 { width: 2.25rem; }
+        .w-10 { width: 2.5rem; }
+        .h-8 { height: 2rem; }
+        .h-9 { height: 2.25rem; }
+        .h-10 { height: 2.5rem; }
+        .text-center { text-align: center; }
+        .hidden { display: none; }
+        .whitespace-nowrap { white-space: nowrap; }
+        .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+        .sticky { position: sticky; }
+        .top-0 { top: 0; }
+        .top-\[65px\] { top: 65px; }
+        .top-\[129px\] { top: 129px; }
+        .left-1\/2 { left: 50%; }
+        .-translate-x-1\/2 { transform: translateX(-50%); }
+        .bottom-6 { bottom: 1.5rem; }
+        .z-40 { z-index: 40; }
+        .z-50 { z-index: 50; }
+        .z-\[90\] { z-index: 90; }
+        .fixed { position: fixed; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .overflow-auto { overflow: auto; }
+        .overflow-hidden { overflow: hidden; }
+        .max-h-\[92dvh\] { max-height: 92dvh; }
+        .block { display: block; }
+
+        .section-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .ride-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .ride-card:active {
+            transform: scale(0.985);
+        }
+
+        .stat-card {
+            background: #1e2937;
+            transition: transform 0.2s ease;
+        }
+
+        .stop-card {
+            transition: all 0.2s ease;
+        }
+
+        .stop-card:active {
+            background-color: #334155;
+        }
+
+        .nav-tab {
+            position: relative;
+            padding-bottom: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            color: #e0f2fe;
+        }
+        
+        .nav-tab.active:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #3b82f6;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .bottom-sheet {
+            animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal {
+            animation: fadeInScale 0.2s ease forwards;
+        }
+
+        .data-table th {
+            background: #1e2937;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .metric-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .touch-target {
+            min-height: 48px;
+            min-width: 48px;
+        }
+
+        .logistics-bg {
+            background-image: 
+                linear-gradient(rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.95)),
+                url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill-rule=%22evenodd%22%3E%3Cpath fill=%22%231e2937%22 fill-opacity=%22008%22 d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-10V8h-2v16h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 6v-4H4v4H0v2h4v4h2V8h4V6H6z%22/%3E%3C/g%3E%3C/svg%27');
+            background-size: 60px 60px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .large-input,
+        .field-input {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.0625rem;
+            font-weight: 500;
+            color: #f1f5f9;
+            line-height: 1.5;
+            letter-spacing: 0.01em;
+            min-height: 48px;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .app-container input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="datetime-local"]):not([type="date"]),
+        .app-container select,
+        .app-container textarea {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.0625rem;
+            font-weight: 500;
+            color: #f1f5f9;
+            line-height: 1.5;
+            letter-spacing: 0.01em;
+        }
+
+        .app-container input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="datetime-local"]):not([type="date"]),
+        .app-container select {
+            min-height: 48px;
+        }
+
+        .app-container textarea {
+            min-height: 72px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .app-container input::placeholder,
+        .app-container textarea::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+
+        .app-container select option {
+            background: #1e293b;
+            color: #f1f5f9;
+            font-size: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 0.375rem;
+            display: block;
+            letter-spacing: 0.01em;
+        }
+
+        .section-label {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .field-text {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            line-height: 1.4;
+        }
+
+        .field-meta {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        .field-badge {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .manifest-stop {
+            transition: all 0.1s ease;
+        }
+
+        .manifest-stop:hover {
+            background-color: #334155;
+        }
+
+        .font-mono,
+        .datetime-text {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            letter-spacing: 0.025em;
+        }
+
+        .datetime-text {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .lap-time-display {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            font-size: 1.125rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            line-height: 1.4;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0.625rem 0.75rem;
+            background: #020617;
+            border: 1px solid #475569;
+            border-radius: 1rem;
+        }
+
+        .lap-time-display.is-empty {
+            color: #64748b;
+            font-size: 0.9375rem;
+            font-weight: 500;
+        }
+
+        input[type="time"] {
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .time-input,
+        input[type="time"].time-input,
+        input[type="date"].time-input {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            font-size: 1.0625rem;
+            font-weight: 500;
+            color: #f1f5f9;
+            letter-spacing: 0.03em;
+            line-height: 1.5;
+            min-height: 48px;
+        }
+
+        .time-input::-webkit-datetime-edit,
+        input[type="date"].time-input::-webkit-datetime-edit,
+        input[type="date"].large-input::-webkit-datetime-edit {
+            color: #f1f5f9;
+            font-size: 1.0625rem;
+            padding: 0;
+        }
+
+        .time-input::-webkit-datetime-edit-fields-wrapper,
+        input[type="date"].time-input::-webkit-datetime-edit-fields-wrapper,
+        input[type="date"].large-input::-webkit-datetime-edit-fields-wrapper {
+            padding: 0 2px;
+        }
+
+        .time-input::-webkit-datetime-edit-text,
+        .time-input::-webkit-datetime-edit-month-field,
+        .time-input::-webkit-datetime-edit-day-field,
+        .time-input::-webkit-datetime-edit-year-field,
+        .time-input::-webkit-datetime-edit-hour-field,
+        .time-input::-webkit-datetime-edit-minute-field,
+        .time-input::-webkit-datetime-edit-second-field,
+        .time-input::-webkit-datetime-edit-ampm-field,
+        input[type="date"].time-input::-webkit-datetime-edit-month-field,
+        input[type="date"].time-input::-webkit-datetime-edit-day-field,
+        input[type="date"].time-input::-webkit-datetime-edit-year-field,
+        input[type="date"].large-input::-webkit-datetime-edit-month-field,
+        input[type="date"].large-input::-webkit-datetime-edit-day-field,
+        input[type="date"].large-input::-webkit-datetime-edit-year-field {
+            color: #f1f5f9;
+            font-size: 1.0625rem;
+            font-weight: 500;
+            padding: 2px 3px;
+            border-radius: 4px;
+        }
+
+        .time-input::-webkit-datetime-edit-month-field:focus,
+        .time-input::-webkit-datetime-edit-day-field:focus,
+        .time-input::-webkit-datetime-edit-year-field:focus,
+        .time-input::-webkit-datetime-edit-hour-field:focus,
+        .time-input::-webkit-datetime-edit-minute-field:focus,
+        .time-input::-webkit-datetime-edit-second-field:focus,
+        input[type="date"]::-webkit-datetime-edit-month-field:focus,
+        input[type="date"]::-webkit-datetime-edit-day-field:focus,
+        input[type="date"]::-webkit-datetime-edit-year-field:focus {
+            background-color: #334155;
+            color: #ffffff;
+            outline: none;
+        }
+
+        .time-input::-webkit-calendar-picker-indicator,
+        input[type="date"].time-input::-webkit-calendar-picker-indicator,
+        input[type="date"].large-input::-webkit-calendar-picker-indicator {
+            filter: invert(0.9) brightness(1.2);
+            opacity: 1;
+            cursor: pointer;
+            width: 1.35rem;
+            height: 1.35rem;
+            margin-left: 4px;
+        }
+
+        input[type="datetime-local"] {
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #app {
+            width: 100%;
+            min-width: 0;
+        }
+
+        #app img, #app video, #app table {
+            max-width: 100%;
+        }
+
+        @media (max-width: 640px) {
+            .app-container {
+                max-width: 100%;
+                box-shadow: none;
+            }
+
+            .app-header-title {
+                font-size: 1.125rem !important;
+                line-height: 1.25rem;
+            }
+
+            .app-header-subtitle {
+                font-size: 0.5625rem !important;
+                letter-spacing: 0.12em !important;
+            }
+
+            .nav-tab {
+                font-size: 0.5625rem;
+                letter-spacing: 0.02em;
+                padding: 0.5rem 0.125rem 0.625rem;
+                line-height: 1.15;
+                min-width: 0;
+            }
+
+            .nav-tab i {
+                display: block;
+                font-size: 0.8125rem;
+                margin: 0 auto 0.125rem;
+            }
+
+            .ride-detail-header .flex.items-center.gap-x-3 {
+                min-width: 0;
+                flex: 1 1 0%;
+            }
+
+            input[type="datetime-local"].time-input {
+                font-size: 0.875rem;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+
+            .grid-cols-2,
+            .grid-cols-3 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+
+            .grid-cols-3.gap-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <div class="app-container mx-auto min-h-screen flex flex-col">
+        <!-- Top Navigation -->
+        <div class="bg-slate-900 border-b border-slate-800 px-5 py-4 flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center gap-x-3 min-w-0 flex-1">
+                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0">
+                    <i class="fa-solid fa-truck text-white text-2xl"></i>
+                </div>
+                <div class="min-w-0">
+                    <span class="font-display text-2xl font-semibold tracking-tighter app-header-title block truncate">CSR</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-2" id="top-nav-actions">
+                <!-- Dynamic actions injected by JS -->
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="app" class="flex-1 overflow-auto">
+            <!-- Content rendered by JS -->
+        </div>
+
+        <!-- Bottom Safe Area for mobile -->
+        <div class="bg-slate-900" style="height: max(1.25rem, env(safe-area-inset-bottom));"></div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2"></div>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script>
+        // Tailwind Play CDN removed for production (no more console warning).
+        // The app uses custom CSS + Font Awesome for core styling.
+
+        // ==================== STATE MANAGEMENT ====================
+        let state = {
+            rides: [],
+            currentRideId: null,
+            currentTab: 'stops', // 'info' | 'stops' | 'manifest' | 'summary'
+            currentModal: null
+        };
+
+        const STORAGE_KEY = 'csrRidelog_v2';
+        let storageAvailable = true;
+
+        function formatDateTimeLocalValue(value) {
+            if (value == null || value === '') return '';
+            const str = String(value).trim();
+            const match = str.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+            if (match) {
+                return `${match[1]}T${match[2]}:${match[3]}:${match[4] ?? '00'}`;
+            }
+            return '';
+        }
+
+        function isLocalStorageAvailable() {
+            try {
+                const test = '__storage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function loadState() {
+            if (!isLocalStorageAvailable()) {
+                storageAvailable = false;
+                console.warn('%c[CSR RideLog] localStorage is unavailable (sandboxed iframe or private mode). Data will not persist after refresh.', 'color:#f59e0b');
+                seedSampleData();
+                return;
+            }
+
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    state = JSON.parse(saved);
+                    // Ensure backward compatibility
+                    if (!state.rides) state.rides = [];
+                    state.rides.forEach(ride => {
+                        if (!ride.stops) ride.stops = [];
+                        ride.routeStartTime = formatDateTimeLocalValue(ride.routeStartTime) || null;
+                        ride.routeEndTime = formatDateTimeLocalValue(ride.routeEndTime) || null;
+                        if (ride.routeStartOdometer == null) ride.routeStartOdometer = null;
+                        if (ride.routeEndOdometer == null) ride.routeEndOdometer = null;
+                        if (ride.coordinator == null) ride.coordinator = '';
+                        ride.stops.forEach(stop => {
+                            if (stop.stopType) stop.stopType = normalizeStopType(stop.stopType);
+                            if (stop.arrive) stop.arrive = normalizeStopTime(stop.arrive);
+                            if (stop.depart) stop.depart = normalizeStopTime(stop.depart);
+                            stop.walkDistance = normalizeWalkDistance(stop.walkDistance);
+                            delete stop.odometer;
+                            delete stop.miKm;
+                        });
+                    });
+                } else {
+                    // Seed sample data on first run
+                    seedSampleData();
+                }
+
+                // Always open to Home — rides list, stats, and New Ride
+                state.currentRideId = null;
+                state.currentTab = 'stops';
+            } catch (e) {
+                console.error('Failed to load state', e);
+                seedSampleData();
+            }
+        }
+
+        function saveState() {
+            if (!storageAvailable) {
+                // Silently skip saving when localStorage is blocked
+                return;
+            }
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.error('Failed to save state', e);
+                showToast('Error saving data', 'error');
+            }
+        }
+
+        function seedSampleData() {
+            state.rides = [];
+            state.currentRideId = null;
+            saveState();
+        }
+
+        // ==================== HELPERS ====================
+        const STOP_TYPES = {
+            A: 'Apartment',
+            H: 'House',
+            S: 'Store',
+            D: 'Dock',
+            RR: 'Receiving Room',
+            OB: 'Office Building',
+            M: 'Mall',
+            MED: 'Hospital',
+            F: 'Factory',
+            C: 'Church',
+            SCH: 'School',
+            SDOC: 'Same Day On Call'
+        };
+
+        const WALK_DISTANCE_OPTIONS = {
+            1: '<50 FT.',
+            2: '50-100 FT.',
+            3: '100-200 FT.',
+            4: '>200 FT.'
+        };
+
+        function normalizeStopType(code) {
+            if (!code) return 'S';
+            const raw = String(code).toUpperCase().replace(/[\s_-]+/g, '');
+            if (STOP_TYPES[raw]) return raw;
+            if (['SDOC', 'SAMEDAYONCALL', 'SAMEDAY'].includes(raw)) return 'SDOC';
+            if (['SCH', 'SCHOOL'].includes(raw)) return 'SCH';
+            if (['MED', 'HOSPITAL', 'HOSP'].includes(raw)) return 'MED';
+            if (['OB', 'OFFICEBUILDING'].includes(raw)) return 'OB';
+            if (['RR', 'RECEIVINGROOM', 'RECEIVING'].includes(raw)) return 'RR';
+            if (['O', 'OFFICE'].includes(raw)) return 'RR';
+            if (['APT', 'APARTMENT'].includes(raw)) return 'A';
+            if (['H', 'HOME', 'HOUSE'].includes(raw)) return 'H';
+            if (['S', 'STORE', 'B', 'BUSINESS'].includes(raw)) return 'S';
+            if (['D', 'DOCK'].includes(raw)) return 'D';
+            if (['M', 'MALL'].includes(raw)) return 'M';
+            if (['F', 'FACTORY'].includes(raw)) return 'F';
+            if (['C', 'CHURCH'].includes(raw)) return 'C';
+            if (raw === 'A') return 'A';
+            if (['P', 'PICKUP', 'PU'].includes(raw)) return 'SDOC';
+            return 'S';
+        }
+
+        function formatStopType(code) {
+            return STOP_TYPES[normalizeStopType(code)] || code || 'Store';
+        }
+
+        function getStopTypeOptions(selected) {
+            const normalized = normalizeStopType(selected);
+            return Object.entries(STOP_TYPES).map(([value, label]) =>
+                `<option value="${value}" ${normalized === value ? 'selected' : ''}>${value} - ${label}</option>`
+            ).join('');
+        }
+
+        function normalizeWalkDistance(value) {
+            if (value == null || value === '') return null;
+            const n = parseInt(value, 10);
+            if (isNaN(n)) return null;
+            if (n >= 1 && n <= 4) return n;
+            if (n < 50) return 1;
+            if (n <= 100) return 2;
+            if (n <= 200) return 3;
+            return 4;
+        }
+
+        function formatWalkDistance(value) {
+            const n = normalizeWalkDistance(value);
+            if (!n) return '';
+            return `${n} = ${WALK_DISTANCE_OPTIONS[n]}`;
+        }
+
+        function getWalkDistanceOptions(selected) {
+            const normalized = normalizeWalkDistance(selected);
+            let html = '<option value="">— Select —</option>';
+            return html + Object.entries(WALK_DISTANCE_OPTIONS).map(([value, label]) =>
+                `<option value="${value}" ${normalized == value ? 'selected' : ''}>${value} = ${label}</option>`
+            ).join('');
+        }
+
+        function generateId(prefix = 'id') {
+            return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+
+        function normalizeStopTime(value) {
+            if (!value) return null;
+            if (typeof value !== 'string') return null;
+            const trimmed = value.trim();
+            if (!trimmed) return null;
+            if (trimmed.includes('T')) return toTimeInputValue(trimmed);
+
+            const pad = n => String(n).padStart(2, '0');
+            const ampmMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+            if (ampmMatch) {
+                let h = parseInt(ampmMatch[1], 10);
+                const m = ampmMatch[2];
+                const s = ampmMatch[3] || '00';
+                const isPm = ampmMatch[4].toUpperCase() === 'PM';
+                if (h === 12) h = isPm ? 12 : 0;
+                else if (isPm) h += 12;
+                return `${pad(h)}:${m}:${pad(s)}`;
+            }
+
+            const parts = trimmed.split(':');
+            if (parts.length === 2) return `${pad(parseInt(parts[0], 10))}:${pad(parts[1])}:00`;
+            if (parts.length >= 3) {
+                const third = parts[2].trim();
+                const secAmPm = third.match(/^(\d{2})\s*(AM|PM)$/i);
+                if (secAmPm) {
+                    let h = parseInt(parts[0], 10);
+                    const m = parts[1];
+                    const s = secAmPm[1];
+                    const isPm = secAmPm[2].toUpperCase() === 'PM';
+                    if (h === 12) h = isPm ? 12 : 0;
+                    else if (isPm) h += 12;
+                    return `${pad(h)}:${m}:${s}`;
+                }
+                return `${pad(parseInt(parts[0], 10))}:${pad(parts[1])}:${pad(parseInt(parts[2], 10))}`;
+            }
+            return null;
+        }
+
+        function formatStopTimeInputField(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el || !el.value.trim()) return;
+            const normalized = normalizeStopTime(el.value.trim());
+            if (normalized) el.value = formatStopTimeDisplay(normalized);
+        }
+
+        function toTimeInputValue(timeStr) {
+            if (!timeStr) return '';
+            if (timeStr.includes('T')) {
+                const d = new Date(timeStr);
+                const pad = n => String(n).padStart(2, '0');
+                return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+            return normalizeStopTime(timeStr) || '';
+        }
+
+        function toComparableDateTime(timeStr, contextDate) {
+            if (!timeStr) return null;
+            if (timeStr.includes('T')) return timeStr;
+            const date = contextDate || new Date().toISOString().split('T')[0];
+            const normalized = normalizeStopTime(timeStr);
+            const parts = normalized.split(':');
+            const pad = n => String(n).padStart(2, '0');
+            return `${date}T${pad(parts[0])}:${pad(parts[1])}:${pad(parts[2] || 0)}`;
+        }
+
+        function formatDateTime(dtStr) {
+            if (!dtStr) return '—';
+            try {
+                let d;
+                if (dtStr.includes('T')) {
+                    d = new Date(dtStr);
+                } else {
+                    const parts = dtStr.split(':').map(Number);
+                    d = new Date();
+                    d.setHours(parts[0], parts[1], parts[2] || 0, 0);
+                }
+                return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+            } catch {
+                return dtStr;
+            }
+        }
+
+        function formatStopTimeDisplay(timeStr) {
+            const normalized = normalizeStopTime(timeStr);
+            if (!normalized) return '—';
+            const parts = normalized.split(':');
+            const h24 = parseInt(parts[0], 10);
+            const min = String(parts[1]).padStart(2, '0');
+            const sec = String(parts[2] ?? '00').padStart(2, '0');
+            const h12 = h24 % 12 || 12;
+            const ampm = h24 >= 12 ? 'PM' : 'AM';
+            return `${h12}:${min}:${sec} ${ampm}`;
+        }
+
+        function formatDate(dtStr) {
+            if (!dtStr) return '—';
+            try {
+                return new Date(dtStr).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+            } catch {
+                return dtStr;
+            }
+        }
+
+        function formatDuration(minutes) {
+            if (minutes === null || minutes === undefined) return '—';
+            const hrs = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            if (hrs > 0) return `${hrs}h ${mins}m`;
+            return `${mins}m`;
+        }
+
+        function getNowForInput() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        function getNowForTimeInput() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        function diffMinutes(startStr, endStr, contextDate = null) {
+            if (!startStr || !endStr) return null;
+            try {
+                const start = new Date(toComparableDateTime(startStr, contextDate));
+                const end = new Date(toComparableDateTime(endStr, contextDate));
+                let diff = Math.round((end - start) / 60000);
+                if (diff < 0) diff += 24 * 60;
+                return Math.max(0, diff);
+            } catch {
+                return null;
+            }
+        }
+
+        function getStopTimeSortValue(stop, rideDate) {
+            const time = stop?.arrive || stop?.depart;
+            if (!time) return null;
+            return new Date(toComparableDateTime(time, rideDate)).getTime();
+        }
+
+        function sortStopsByTime(ride) {
+            if (!ride?.stops?.length) return;
+
+            const rideDate = ride.date;
+            const indexed = ride.stops.map((stop, index) => ({ stop, index }));
+            const hasTimedStop = indexed.some(({ stop }) => getStopTimeSortValue(stop, rideDate) != null);
+            if (!hasTimedStop) return;
+
+            indexed.sort((a, b) => {
+                const aVal = getStopTimeSortValue(a.stop, rideDate);
+                const bVal = getStopTimeSortValue(b.stop, rideDate);
+                if (aVal == null && bVal == null) return a.index - b.index;
+                if (aVal == null) return 1;
+                if (bVal == null) return -1;
+                if (aVal !== bVal) return aVal - bVal;
+                return a.index - b.index;
+            });
+
+            ride.stops = indexed.map(entry => entry.stop);
+        }
+
+        function recalculateStopDurations(ride) {
+            if (!ride?.stops?.length) return 0;
+
+            sortStopsByTime(ride);
+
+            let updatedCount = 0;
+            const stops = ride.stops;
+            const rideDate = ride.date;
+
+            for (let i = 0; i < stops.length; i++) {
+                const stop = stops[i];
+
+                if (stop.arrive && stop.depart) {
+                    const atStop = diffMinutes(stop.arrive, stop.depart, rideDate);
+                    if (atStop !== null) {
+                        stop.atStopMinutes = atStop;
+                        updatedCount++;
+                    }
+                }
+
+                if (i > 0 && stop.arrive) {
+                    const prevStop = stops[i - 1];
+                    if (prevStop.depart) {
+                        const travel = diffMinutes(prevStop.depart, stop.arrive, rideDate);
+                        if (travel !== null) {
+                            stop.travelMinutes = travel;
+                            updatedCount++;
+                        }
+                    }
+                }
+            }
+
+            return updatedCount;
+        }
+
+        function calculateRideStats(ride) {
+            const stops = ride.stops || [];
+            const totalPackages = stops.reduce((sum, s) => sum + (s.packagesDelivered || 0), 0);
+            const totalStops = stops.length;
+            const releases = stops.filter(s => s.driverRelease).length;
+            const releasePct = totalStops > 0 ? Math.round((releases / totalStops) * 100) : 0;
+            
+            let totalTravel = 0;
+            let totalAtStop = 0;
+            
+            stops.forEach(s => {
+                if (s.travelMinutes) totalTravel += s.travelMinutes;
+                if (s.atStopMinutes) totalAtStop += s.atStopMinutes;
+            });
+            
+            // Route duration
+            let routeDurationMin = null;
+            if (ride.routeStartTime && ride.routeEndTime) {
+                routeDurationMin = diffMinutes(ride.routeStartTime, ride.routeEndTime);
+            }
+
+            let routeOdometerMiles = null;
+            if (ride.routeStartOdometer != null && ride.routeEndOdometer != null) {
+                routeOdometerMiles = Math.round((ride.routeEndOdometer - ride.routeStartOdometer) * 10) / 10;
+            }
+            
+            return {
+                totalPackages,
+                totalStops,
+                releases,
+                releasePct,
+                totalTravel,
+                totalAtStop,
+                routeDurationMin,
+                routeOdometerMiles
+            };
+        }
+
+        function getUnstartedStops(ride) {
+            return (ride.stops || []).filter(s => !s.arrive && s.address);
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-emerald-600',
+                error: 'bg-red-600',
+                info: 'bg-blue-600'
+            };
+            
+            toast.className = `px-5 py-3.5 rounded-3xl shadow-xl flex items-center gap-x-3 text-white ${colors[type] || colors.info} max-w-[320px]`;
+            toast.innerHTML = `
+                <div class="flex-1 text-sm font-medium">${message}</div>
+                <button class="text-white/70 hover:text-white" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) toast.parentElement.removeChild(toast);
+            }, 4200);
+        }
+
+        // ==================== DATA OPERATIONS ====================
+        function createRide(data) {
+            const ride = {
+                id: generateId('ride'),
+                station: data.station || '',
+                workArea: data.workArea || '',
+                cspBusinessName: data.cspBusinessName || '',
+                vehicleType: data.vehicleType || '',
+                driver: data.driver || '',
+                manager: data.manager || '',
+                coordinator: data.coordinator || '',
+                date: data.date || new Date().toISOString().split('T')[0],
+                notes: data.notes || '',
+                routeStartTime: null,
+                routeEndTime: null,
+                routeStartOdometer: null,
+                routeEndOdometer: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                stops: []
+            };
+            
+            state.rides.unshift(ride); // newest first
+            saveState();
+            return ride;
+        }
+
+        function updateRide(rideId, updates) {
+            const rideIndex = state.rides.findIndex(r => r.id === rideId);
+            if (rideIndex === -1) return null;
+            
+            state.rides[rideIndex] = {
+                ...state.rides[rideIndex],
+                ...updates,
+                updatedAt: new Date().toISOString()
+            };
+            
+            saveState();
+            return state.rides[rideIndex];
+        }
+
+        function deleteRide(rideId) {
+            state.rides = state.rides.filter(r => r.id !== rideId);
+            if (state.currentRideId === rideId) {
+                state.currentRideId = null;
+                state.currentTab = 'stops';
+            }
+            saveState();
+        }
+
+        function addOrUpdateStop(rideId, stopData) {
+            const rideIndex = state.rides.findIndex(r => r.id === rideId);
+            if (rideIndex === -1) return;
+            
+            const ride = state.rides[rideIndex];
+            if (!ride.stops) ride.stops = [];
+            
+            if (stopData.id) {
+                // Update existing
+                const stopIndex = ride.stops.findIndex(s => s.id === stopData.id);
+                if (stopIndex !== -1) {
+                    const updated = { ...ride.stops[stopIndex], ...stopData };
+                    delete updated.odometer;
+                    delete updated.miKm;
+                    ride.stops[stopIndex] = updated;
+                }
+            } else {
+                // Add new
+                const newStop = {
+                    id: generateId('stop'),
+                    arrive: stopData.arrive || null,
+                    depart: stopData.depart || null,
+                    travelMinutes: stopData.travelMinutes || null,
+                    atStopMinutes: stopData.atStopMinutes || null,
+                    address: stopData.address || '',
+                    zip: stopData.zip || '',
+                    stopType: normalizeStopType(stopData.stopType || 'S'),
+                    walkDistance: normalizeWalkDistance(stopData.walkDistance),
+                    driverRelease: stopData.driverRelease || false,
+                    packagesDelivered: stopData.packagesDelivered || 0,
+                    observations: stopData.observations || ''
+                };
+                ride.stops.push(newStop);
+            }
+
+            if (ride.stops.some(s => s.arrive || s.depart)) {
+                recalculateStopDurations(ride);
+            }
+            
+            ride.updatedAt = new Date().toISOString();
+            saveState();
+        }
+
+        function deleteStop(rideId, stopId) {
+            const rideIndex = state.rides.findIndex(r => r.id === rideId);
+            if (rideIndex === -1) return;
+            
+            const ride = state.rides[rideIndex];
+            ride.stops = (ride.stops || []).filter(s => s.id !== stopId);
+            ride.updatedAt = new Date().toISOString();
+            saveState();
+        }
+
+        function importManifestStops(rideId, parsedStops) {
+            const rideIndex = state.rides.findIndex(r => r.id === rideId);
+            if (rideIndex === -1) return 0;
+            
+            const ride = state.rides[rideIndex];
+            
+            // Replace stops with manifest (typical workflow: upload at start of ride)
+            ride.stops = parsedStops.map((s, index) => ({
+                id: generateId('stop'),
+                arrive: null,
+                depart: null,
+                travelMinutes: null,
+                atStopMinutes: null,
+                address: s.address || '',
+                zip: s.zip || '',
+                stopType: normalizeStopType(s.stopType || 'S'),
+                walkDistance: normalizeWalkDistance(s.walkDistance),
+                driverRelease: false,
+                packagesDelivered: s.packagesDelivered || 0,
+                observations: ''
+            }));
+            
+            ride.updatedAt = new Date().toISOString();
+            saveState();
+            return ride.stops.length;
+        }
+
+        function setRouteTiming(rideId, field, value) {
+            const rideIndex = state.rides.findIndex(r => r.id === rideId);
+            if (rideIndex === -1) return;
+
+            const normalized = formatDateTimeLocalValue(value) || null;
+            if (field === 'start') {
+                state.rides[rideIndex].routeStartTime = normalized;
+            } else if (field === 'end') {
+                state.rides[rideIndex].routeEndTime = normalized;
+            }
+            
+            state.rides[rideIndex].updatedAt = new Date().toISOString();
+            saveState();
+        }
+
+        // ==================== CSV / XLSX MANIFEST PARSING ====================
+        function extractZip5(raw) {
+            const digits = String(raw || '').replace(/\D/g, '');
+            return digits.length >= 5 ? digits.slice(0, 5) : '';
+        }
+
+        function mapFedExStopType(typeSt, premSvc) {
+            const prefix = String(typeSt || '').trim().split(/\s+/)[0].toUpperCase();
+            const prem = String(premSvc || '').toUpperCase();
+            if (prefix === 'P') return 'SDOC';
+            if (prem.includes('SCH')) return 'SCH';
+            const normalized = normalizeStopType(prefix);
+            if (normalized !== 'S' || prefix === 'S') return normalized;
+            if (prem.includes('RES')) return 'H';
+            return 'H';
+        }
+
+        function parseManifestRows(rows) {
+            if (!rows.length) return [];
+
+            const header = (rows[0] || []).map(c => String(c || '').toLowerCase().trim());
+            const looksLikeCsrCsv = header.some(h => h.includes('address')) && header.some(h => h.includes('zip'));
+
+            if (looksLikeCsrCsv) {
+                const headers = header;
+                const getCol = (row, possibleNames) => {
+                    for (const name of possibleNames) {
+                        const idx = headers.indexOf(name.toLowerCase());
+                        if (idx !== -1 && row[idx] !== undefined) return String(row[idx]).trim();
+                    }
+                    return '';
+                };
+
+                const stops = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const row = (rows[i] || []).map(c => String(c ?? '').trim());
+                    if (!row.some(Boolean)) continue;
+                    const address = getCol(row, ['address', 'addr', 'location', 'street']);
+                    if (!address) continue;
+                    const stop = buildStopRecord(
+                        address,
+                        getCol(row, ['zip', 'zipcode', 'postal', 'zip code']),
+                        getCol(row, ['stoptype', 'stop type', 'type', 'stop_type']),
+                        getCol(row, ['packages', 'package', 'pkgs', 'pkg', 'deliveries']),
+                        getCol(row, ['walk', 'walkdistance', 'walk distance', 'distance'])
+                    );
+                    if (stop) stops.push(stop);
+                }
+                return stops;
+            }
+
+            const stops = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i] || [];
+                const typeSt = String(row[0] || '').trim();
+                if (!typeSt || /^page$/i.test(typeSt)) continue;
+
+                const addressRaw = String(row[3] || '').trim();
+                const address = addressRaw.split('\n')[0].trim();
+                if (!address) continue;
+
+                const zip = extractZip5(row[6]);
+                if (!zip) continue;
+
+                const stop = buildStopRecord(
+                    address,
+                    zip,
+                    mapFedExStopType(typeSt, row[8]),
+                    row[2]
+                );
+                if (stop) stops.push(stop);
+            }
+            return stops;
+        }
+
+        function parseXLSX(arrayBuffer) {
+            if (typeof XLSX === 'undefined') {
+                throw new Error('Excel library not loaded');
+            }
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+            return parseManifestRows(rows);
+        }
+
+        function buildStopRecord(address, zip, stopTypeRaw, packagesStr, walkStr) {
+            const cleanAddress = (address || '').trim().replace(/\s+/g, ' ');
+            if (!cleanAddress || cleanAddress.length < 5) return null;
+            return {
+                address: cleanAddress,
+                zip: (zip || '').trim(),
+                stopType: normalizeStopType(stopTypeRaw),
+                packagesDelivered: parseInt(packagesStr) || 0,
+                walkDistance: normalizeWalkDistance(walkStr)
+            };
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length < 2) return [];
+            const rows = lines.map(line => parseCSVLine(line));
+            return parseManifestRows(rows);
+        }
+        
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        function generateRideCSV(ride) {
+            const stats = calculateRideStats(ride);
+            let csv = '';
+            
+            // Header section
+            csv += `CSR EXPORT\n`;
+            csv += `Generated,${new Date().toLocaleString()}\n`;
+            csv += `\n`;
+            csv += `STATION,${ride.station}\n`;
+            csv += `WORK AREA #,${ride.workArea}\n`;
+            csv += `CSP BUSINESS NAME,${ride.cspBusinessName}\n`;
+            csv += `VEHICLE TYPE,${ride.vehicleType}\n`;
+            csv += `DRIVER,${ride.driver}\n`;
+            csv += `MANAGER,${ride.manager}\n`;
+            csv += `COORDINATOR,${ride.coordinator || ''}\n`;
+            csv += `DATE,${ride.date}\n`;
+            csv += `ROUTE START,${ride.routeStartTime || ''}\n`;
+            csv += `ROUTE END,${ride.routeEndTime || ''}\n`;
+            csv += `ROUTE START ODOMETER,${ride.routeStartOdometer ?? ''}\n`;
+            csv += `ROUTE END ODOMETER,${ride.routeEndOdometer ?? ''}\n`;
+            csv += `ROUTE ODOMETER MILES,${stats.routeOdometerMiles ?? ''}\n`;
+            csv += `TOTAL ROUTE DURATION (min),${stats.routeDurationMin || ''}\n`;
+            csv += `NOTES,${ride.notes.replace(/"/g, '""')}\n`;
+            csv += `\n`;
+            
+            // Summary
+            csv += `SUMMARY\n`;
+            csv += `Total Stops,${stats.totalStops}\n`;
+            csv += `Total Packages,${stats.totalPackages}\n`;
+            csv += `Driver Releases,${stats.releases} (${stats.releasePct}%)\n`;
+            csv += `Total Travel Minutes,${stats.totalTravel}\n`;
+            csv += `Total At-Stop Minutes,${stats.totalAtStop}\n`;
+            csv += `\n`;
+            
+            // Stops table
+            csv += `STOPS\n`;
+            csv += `Arrive,Depart,Travel Min,At-Stop Min,Address,Zip,Stop Type,Walking Distance (1-4),Driver Release,Packages,Observations\n`;
+            csv += `,,,,,,,1=<50 FT | 2=50-100 FT | 3=100-200 FT | 4=>200 FT,,,\n`;
+            
+            (ride.stops || []).forEach(stop => {
+                const arrive = stop.arrive || '';
+                const depart = stop.depart || '';
+                const travel = stop.travelMinutes || '';
+                const atStop = stop.atStopMinutes || '';
+                const addr = `"${(stop.address || '').replace(/"/g, '""')}"`;
+                const zip = stop.zip || '';
+                const type = stop.stopType || '';
+                const walk = normalizeWalkDistance(stop.walkDistance) || '';
+                const release = stop.driverRelease ? 'Y' : 'N';
+                const pkgs = stop.packagesDelivered || 0;
+                const obs = `"${(stop.observations || '').replace(/"/g, '""')}"`;
+                
+                csv += `${arrive},${depart},${travel},${atStop},${addr},${zip},${type},${walk},${release},${pkgs},${obs}\n`;
+            });
+            
+            return csv;
+        }
+
+        // ==================== UI RENDERING ====================
+        function renderApp() {
+            const appEl = document.getElementById('app');
+            if (!appEl) return;
+            
+            if (!state.currentRideId || state.rides.length === 0) {
+                appEl.innerHTML = getHomeHTML();
+            } else {
+                appEl.innerHTML = getRideDetailHTML();
+            }
+            
+            attachGlobalListeners();
+            attachRouteTimingListeners();
+
+            // Show warning if running in sandboxed iframe (localStorage blocked)
+            if (!storageAvailable) {
+                const warning = document.createElement('div');
+                warning.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:9999;background:#451a03;color:#fed7aa;font-size:12px;padding:6px 14px;border-radius:9999px;box-shadow:0 2px 8px rgb(0 0 0 / 0.3);white-space:nowrap;';
+                warning.innerHTML = `⚠️ Sandbox mode — changes won\'t be saved after refresh. Open file directly in browser tab for full functionality.`;
+                document.body.appendChild(warning);
+                
+                // Auto-hide after 6 seconds
+                setTimeout(() => {
+                    if (warning.parentNode) warning.parentNode.removeChild(warning);
+                }, 6000);
+            }
+        }
+
+        function getHomeHTML() {
+            const rides = state.rides || [];
+            const totalRides = rides.length;
+            const totalStops = rides.reduce((sum, r) => sum + (r.stops?.length || 0), 0);
+            const totalPackages = rides.reduce((sum, r) => {
+                return sum + (r.stops || []).reduce((s, st) => s + (st.packagesDelivered || 0), 0);
+            }, 0);
+            
+            let html = `
+                <div class="p-5 pb-8">
+                    <!-- Header Stats -->
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <div class="stat-card rounded-3xl p-4 text-center border border-slate-700">
+                            <div class="text-3xl font-semibold text-white metric-value">${totalRides}</div>
+                            <div class="text-xs text-slate-400 mt-1 tracking-wider">RIDES LOGGED</div>
+                        </div>
+                        <div class="stat-card rounded-3xl p-4 text-center border border-slate-700">
+                            <div class="text-3xl font-semibold text-white metric-value">${totalStops}</div>
+                            <div class="text-xs text-slate-400 mt-1 tracking-wider">TOTAL STOPS</div>
+                        </div>
+                        <div class="stat-card rounded-3xl p-4 text-center border border-slate-700">
+                            <div class="text-3xl font-semibold text-emerald-400 metric-value">${totalPackages}</div>
+                            <div class="text-xs text-slate-400 mt-1 tracking-wider">PACKAGES</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <div>
+                            <span class="section-header">Your Rides</span>
+                            <span class="text-xs text-slate-500 ml-2">(${rides.length})</span>
+                        </div>
+                        <button onclick="startNewRide()" 
+                                class="flex items-center gap-x-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition-colors text-white px-5 py-2.5 rounded-2xl text-sm font-semibold shadow-lg shadow-blue-900/30">
+                            <i class="fa-solid fa-plus mr-1.5"></i>
+                            <span>NEW RIDE</span>
+                        </button>
+                    </div>
+            `;
+            
+            if (rides.length === 0) {
+                html += `
+                    <div class="mt-12 flex flex-col items-center justify-center text-center px-8">
+                        <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-5">
+                            <i class="fa-solid fa-route text-4xl text-slate-600"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">No rides yet</h3>
+                        <p class="text-slate-400 max-w-xs">Start your first customer service ride to begin logging stops and data.</p>
+                        <button onclick="startNewRide()" 
+                                class="mt-6 px-8 py-3 bg-white text-slate-900 font-semibold rounded-2xl flex items-center gap-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Start First Ride</span>
+                        </button>
+                    </div>
+                `;
+            } else {
+                html += `<div class="space-y-3">`;
+                
+                rides.forEach(ride => {
+                    const stats = calculateRideStats(ride);
+                    const isActive = !ride.routeEndTime;
+                    const stopCount = ride.stops?.length || 0;
+                    
+                    html += `
+                        <div onclick="openRideDetail('${ride.id}')" 
+                             class="ride-card bg-slate-900 border border-slate-700 hover:border-slate-600 active:border-blue-500 rounded-3xl p-5 cursor-pointer">
+                            
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-x-2">
+                                        <span class="font-semibold text-lg">${ride.station}</span>
+                                        <span class="px-2.5 py-0.5 text-xs font-mono bg-slate-800 text-slate-400 rounded-xl">WA ${ride.workArea}</span>
+                                        
+                                        ${isActive ? 
+                                            `<span class="status-badge px-2.5 py-px bg-amber-500/10 text-amber-400 rounded-xl">IN PROGRESS</span>` : 
+                                            `<span class="status-badge px-2.5 py-px bg-emerald-500/10 text-emerald-400 rounded-xl">COMPLETED</span>`
+                                        }
+                                    </div>
+                                    
+                                    <div class="text-sm text-slate-400 mt-0.5 truncate">${ride.cspBusinessName || ride.driver}</div>
+                                </div>
+                                
+                                <div class="text-right">
+                                    <div class="datetime-text text-slate-300">${formatDate(ride.date)}</div>
+                                    ${stats.routeDurationMin ? 
+                                        `<div class="datetime-text text-emerald-400 mt-0.5">${formatDuration(stats.routeDurationMin)}</div>` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-slate-700 flex items-center justify-between text-sm">
+                                <div class="flex items-center gap-x-5">
+                                    <div>
+                                        <span class="font-mono text-lg font-semibold text-white">${stopCount}</span>
+                                        <span class="text-xs text-slate-400 ml-1">stops</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-mono text-lg font-semibold text-emerald-400">${stats.totalPackages}</span>
+                                        <span class="text-xs text-slate-400 ml-1">pkgs</span>
+                                    </div>
+
+                                </div>
+                                
+                                <div class="flex items-center gap-x-1" onclick="event.stopImmediatePropagation(); deleteRideConfirm('${ride.id}')">
+                                    <button class="w-9 h-9 flex items-center justify-center text-red-400 hover:bg-red-950/60 active:bg-red-950 rounded-2xl transition-colors">
+                                        <i class="fa-solid fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+
+        function getRideDetailHTML() {
+            const ride = state.rides.find(r => r.id === state.currentRideId);
+            if (!ride) {
+                state.currentRideId = null;
+                return getHomeHTML();
+            }
+            
+            const stats = calculateRideStats(ride);
+            const isActive = !ride.routeEndTime;
+            const unstartedCount = getUnstartedStops(ride).length;
+            
+            let html = `
+                <!-- Ride Header -->
+                <div class="bg-slate-900 border-b border-slate-700 px-5 py-4 sticky top-[65px] z-40 ride-detail-header">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-x-3 min-w-0 flex-1">
+                            <button onclick="goHome()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white active:bg-slate-800 rounded-2xl">
+                                <i class="fa-solid fa-arrow-left text-xl"></i>
+                            </button>
+                            
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-x-2 min-w-0">
+                                    <span class="font-semibold text-xl truncate">${ride.station}</span>
+                                    <span class="font-mono text-xs px-2 py-px bg-slate-800 text-slate-400 rounded flex-shrink-0">WA${ride.workArea}</span>
+                                </div>
+                                <div class="text-sm text-slate-300 truncate"><span class="datetime-text">${formatDate(ride.date)}</span>${ride.driver ? ` • ${ride.driver}` : ''}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-shrink-0">
+                            ${isActive ? 
+                                `<button onclick="endRide('${ride.id}')" 
+                                        class="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-500 active:bg-red-700 text-white rounded-2xl flex items-center gap-x-2 shadow">
+                                    <i class="fa-solid fa-stop mr-1"></i>
+                                    <span>END RIDE</span>
+                                </button>` : 
+                                `<div class="px-3 py-1.5 bg-emerald-600/10 text-emerald-400 text-xs font-bold rounded-2xl flex items-center gap-x-1.5">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                    <span>COMPLETED</span>
+                                </div>`
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="bg-slate-900 border-b border-slate-700 px-2 flex sticky top-[129px] z-40">
+                    <div onclick="switchTab('stops')" class="nav-tab flex-1 text-center py-3 text-sm cursor-pointer ${state.currentTab === 'stops' ? 'active' : ''}">
+                        <i class="fa-solid fa-list-check mr-2"></i>STOPS
+                    </div>
+                    <div onclick="switchTab('info')" class="nav-tab flex-1 text-center py-3 text-sm cursor-pointer ${state.currentTab === 'info' ? 'active' : ''}">
+                        <i class="fa-solid fa-info-circle mr-2"></i>INFO
+                    </div>
+                    <div onclick="switchTab('manifest')" class="nav-tab flex-1 text-center py-3 text-sm cursor-pointer ${state.currentTab === 'manifest' ? 'active' : ''}">
+                        <i class="fa-solid fa-file-upload mr-2"></i>MANIFEST
+                        ${unstartedCount > 0 ? `<span class="ml-1 text-[10px] px-1.5 py-px bg-blue-500 text-white rounded">${unstartedCount}</span>` : ''}
+                    </div>
+                    <div onclick="switchTab('summary')" class="nav-tab flex-1 text-center py-3 text-sm cursor-pointer ${state.currentTab === 'summary' ? 'active' : ''}">
+                        <i class="fa-solid fa-chart-bar mr-2"></i>SUMMARY
+                    </div>
+                </div>
+
+                <div class="p-5">
+            `;
+            
+            // Tab content
+            if (state.currentTab === 'info') {
+                html += getInfoTabHTML(ride);
+            } else if (state.currentTab === 'stops') {
+                html += getStopsTabHTML(ride, stats);
+            } else if (state.currentTab === 'manifest') {
+                html += getManifestTabHTML(ride, unstartedCount);
+            } else if (state.currentTab === 'summary') {
+                html += getSummaryTabHTML(ride, stats);
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+
+        function getInfoTabHTML(ride) {
+            return `
+                <div class="max-w-md mx-auto">
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 space-y-5">
+                        <div>
+                            <label class="form-label">Station / Zone</label>
+                            <input type="text" id="edit-station" value="${ride.station}" 
+                                   class="large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">Work Area #</label>
+                                <input type="text" id="edit-workarea" value="${ride.workArea}" 
+                                       class="large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white font-mono">
+                            </div>
+                            <div>
+                                <label class="form-label">Date</label>
+                                <input type="date" id="edit-date" value="${ride.date}" 
+                                       class="time-input large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">CSP Business Name</label>
+                            <input type="text" id="edit-csp" value="${ride.cspBusinessName}" 
+                                   class="large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Vehicle Type</label>
+                            <input type="text" id="edit-vehicle" value="${ride.vehicleType}" 
+                                   class="large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Manager / Coordinator</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="text" id="edit-manager" value="${ride.manager}" placeholder="Manager"
+                                       class="large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white">
+                                <input type="text" id="edit-coordinator" value="${ride.coordinator || ''}" placeholder="Coordinator"
+                                       class="large-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-3 text-white">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Notes / Observations</label>
+                            <textarea id="edit-notes" rows="3" 
+                                      class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-3xl px-4 py-3">${ride.notes || ''}</textarea>
+                        </div>
+                        
+                        <div class="pt-3 flex gap-3">
+                            <button onclick="saveRideInfo()" 
+                                    class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 transition font-semibold rounded-2xl text-sm">
+                                SAVE CHANGES
+                            </button>
+                            <button onclick="goHome()" 
+                                    class="px-6 py-3.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 transition font-semibold rounded-2xl text-sm">
+                                CANCEL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStopsTabHTML(ride, stats) {
+            let html = `
+                <!-- Route Timing Card -->
+                <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 mb-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="font-semibold flex items-center gap-x-2">
+                            <i class="fa-solid fa-clock text-blue-400"></i>
+                            <span>ROUTE START & END</span>
+                        </div>
+                        ${stats.routeDurationMin ? 
+                            `<div class="datetime-text text-emerald-400">${formatDuration(stats.routeDurationMin)}</div>` : ''}
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">ROUTE START TIME</label>
+                            <div class="flex gap-2">
+                                <input type="datetime-local" step="1" id="route-start" value="${formatDateTimeLocalValue(ride.routeStartTime)}" 
+                                       class="time-input flex-1 bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-3 py-2.5">
+                                <button onclick="setRouteTimeNow('start')" 
+                                        class="px-3 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 rounded-2xl text-xs font-bold whitespace-nowrap">LAP</button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">ROUTE END TIME</label>
+                            <div class="flex gap-2">
+                                <input type="datetime-local" step="1" id="route-end" value="${formatDateTimeLocalValue(ride.routeEndTime)}" 
+                                       class="time-input flex-1 bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-3 py-2.5">
+                                <button onclick="setRouteTimeNow('end')" 
+                                        class="px-3 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 rounded-2xl text-xs font-bold whitespace-nowrap">LAP</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label">START ODOMETER</label>
+                            <input type="number" id="route-start-odo" value="${ride.routeStartOdometer ?? ''}" 
+                                   class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-2.5 font-mono" placeholder="miles">
+                        </div>
+
+                        <div>
+                            <label class="form-label">END ODOMETER</label>
+                            <input type="number" id="route-end-odo" value="${ride.routeEndOdometer ?? ''}" 
+                                   class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-2.5 font-mono" placeholder="miles">
+                        </div>
+                    </div>
+
+                    ${stats.routeOdometerMiles != null ? `
+                        <div class="mt-3 px-1 flex justify-between items-center">
+                            <span class="field-meta">Route distance (odometer)</span>
+                            <span class="datetime-text text-emerald-400">${stats.routeOdometerMiles} mi</span>
+                        </div>
+                    ` : ''}
+                    
+                    <button onclick="saveRouteTiming()" 
+                            class="mt-4 w-full py-2.5 text-xs font-bold tracking-wider bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-2xl">
+                        UPDATE ROUTE
+                    </button>
+                </div>
+
+                <!-- Stops Header -->
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <div>
+                        <span class="section-header">STOPS (${ride.stops?.length || 0})</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openStopForm()"
+                                class="text-xs px-4 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-2xl flex items-center gap-x-2 font-semibold">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>ADD STOP</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            if (!ride.stops || ride.stops.length === 0) {
+                html += `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-map-marker-alt text-3xl mb-3 opacity-40"></i>
+                        <p>No stops logged yet.</p>
+                        <p class="text-xs mt-1">Upload a manifest or add stops manually.</p>
+                    </div>
+                `;
+            } else {
+                html += `<div class="space-y-2.5">`;
+                
+                ride.stops.forEach((stop, index) => {
+                    const hasTimes = stop.arrive && stop.depart;
+                    const statusColor = hasTimes ? 'emerald' : 'amber';
+                    
+                    html += `
+                        <div onclick="openStopForm('${stop.id}')" class="stop-card bg-slate-900 border border-slate-700 hover:border-slate-500 active:bg-slate-800 rounded-3xl px-4 py-3.5 flex items-center gap-3 cursor-pointer">
+                            <div class="w-8 text-center">
+                                <span class="font-mono text-xs text-slate-500">#${index + 1}</span>
+                            </div>
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="field-text truncate">${stop.address}</div>
+                                <div class="flex items-center gap-x-2 field-meta mt-0.5">
+                                    <span>${stop.zip}</span>
+                                    <span class="field-badge px-2 py-0.5 bg-slate-700 rounded" title="${formatStopType(stop.stopType)}">${stop.stopType}</span>
+                                    ${stop.packagesDelivered > 0 ? `<span class="text-emerald-400 font-semibold">+${stop.packagesDelivered} pkg</span>` : ''}
+                                    ${stop.walkDistance ? `<span>Walk ${formatWalkDistance(stop.walkDistance)}</span>` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="text-right text-xs min-w-[7.5rem]">
+                                ${stop.arrive ? 
+                                    `<div class="datetime-text text-emerald-400">In ${formatStopTimeDisplay(stop.arrive)}</div>` :
+                                    `<div class="text-amber-400 font-medium">NOT STARTED</div>`
+                                }
+                                ${stop.depart ? 
+                                    `<div class="datetime-text text-slate-300">Out ${formatStopTimeDisplay(stop.depart)}</div>` : ''}
+                                ${hasTimes ? 
+                                    `<div class="field-meta text-slate-400">${stop.atStopMinutes || 0}m at stop</div>` : ''}
+                            </div>
+                            
+                            <div class="flex items-center gap-x-2 pl-1">
+                                <!-- Delete button -->
+                                <button type="button"
+                                        data-delete-stop
+                                        data-ride-id="${ride.id}"
+                                        data-stop-id="${stop.id}"
+                                        class="w-9 h-9 flex items-center justify-center text-red-400 hover:bg-red-950/60 active:bg-red-950 rounded-2xl transition-colors touch-target">
+                                    <i class="fa-solid fa-trash text-sm"></i>
+                                </button>
+                                
+                                <i class="fa-solid fa-chevron-right text-slate-500"></i>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            return html;
+        }
+
+        function getManifestTabHTML(ride, unstartedCount) {
+            return `
+                <div class="max-w-md mx-auto">
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 mb-5">
+                        <div class="font-semibold mb-1 flex items-center gap-x-2">
+                            <i class="fa-solid fa-file-import text-blue-400"></i>
+                            <span>IMPORT MANIFEST</span>
+                        </div>
+                        <p class="field-meta text-slate-400 mb-4">Upload a CSV or FedEx Excel manifest (.xlsx). This replaces current stops with the imported route.</p>
+                        
+                        <label class="cursor-pointer block">
+                            <div class="border-2 border-dashed border-slate-600 hover:border-blue-500 active:bg-slate-800 transition rounded-3xl p-8 text-center">
+                                <i class="fa-solid fa-upload text-3xl text-slate-500 mb-3"></i>
+                                <div class="font-semibold">Choose CSV or Excel file</div>
+                                <div class="field-meta text-slate-500 mt-2">CSV: Address, Zip, StopType, Packages</div>
+                                <div class="field-meta text-slate-500 mt-1">Excel: FedEx route manifest (.xlsx)</div>
+                            </div>
+                            <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden" onchange="handleManifestUpload(event)">
+                        </label>
+                    </div>
+                    
+                    <div class="px-1">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-semibold">Current Manifest Stops</span>
+                            <span class="text-xs px-2 py-0.5 bg-slate-700 rounded-xl">${ride.stops?.length || 0} total</span>
+                        </div>
+                        
+                        ${ride.stops && ride.stops.length > 0 ? `
+                            <div class="space-y-1.5 max-h-[420px] overflow-auto pr-1">
+                                ${ride.stops.map(stop => {
+                                    const isLogged = !!stop.arrive;
+                                    return `
+                                        <div class="manifest-stop flex items-center justify-between bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-sm">
+                                            <div class="flex items-center gap-x-3 min-w-0">
+                                                <div class="${isLogged ? 'text-emerald-400' : 'text-amber-400'}">
+                                                    <i class="fa-solid ${isLogged ? 'fa-check-circle' : 'fa-clock'}"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <div class="field-text truncate">${stop.address}</div>
+                                                    <div class="field-meta">${stop.zip} • ${formatStopType(stop.stopType)} • ${stop.packagesDelivered} pkg${stop.walkDistance ? ` • Walk ${formatWalkDistance(stop.walkDistance)}` : ''}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            ${isLogged ? 
+                                                `<span class="text-emerald-400 text-xs font-bold">LOGGED</span>` : 
+                                                `<span class="text-amber-400 text-xs font-bold">PENDING</span>`
+                                            }
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : `
+                            <div class="text-center py-6 text-slate-400 text-sm">
+                                No manifest imported yet
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getSummaryTabHTML(ride, stats) {
+            return `
+                <div class="max-w-md mx-auto space-y-4">
+                    <!-- Big Metrics -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                            <div class="text-xs text-slate-400">TOTAL STOPS</div>
+                            <div class="text-5xl font-semibold mt-1 metric-value">${stats.totalStops}</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                            <div class="text-xs text-slate-400">PACKAGES DELIVERED</div>
+                            <div class="text-5xl font-semibold mt-1 text-emerald-400 metric-value">${stats.totalPackages}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5">
+                        <div class="text-xs text-slate-400 mb-3">DRIVER RELEASE RATE</div>
+                        <div class="flex items-end gap-x-3">
+                            <div class="text-5xl font-semibold metric-value">${stats.releasePct}<span class="text-2xl">%</span></div>
+                            <div class="text-sm text-emerald-400 pb-1">${stats.releases} of ${stats.totalStops} stops</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1.5">
+                                <span class="text-slate-400">Total Travel Time</span>
+                                <span class="font-mono font-semibold">${formatDuration(stats.totalTravel)}</span>
+                            </div>
+                            <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 rounded-full" style="width: ${Math.min(100, (stats.totalTravel / 180) * 100)}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1.5">
+                                <span class="text-slate-400">Total At-Stop Time</span>
+                                <span class="font-mono font-semibold">${formatDuration(stats.totalAtStop)}</span>
+                            </div>
+                            <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-amber-500 rounded-full" style="width: ${Math.min(100, (stats.totalAtStop / 120) * 100)}%"></div>
+                            </div>
+                        </div>
+                        
+                        ${stats.routeOdometerMiles != null ? `
+                        <div class="pt-2 border-t border-slate-700 flex justify-between items-center">
+                            <span class="text-slate-400">Route Odometer Miles</span>
+                            <span class="font-mono text-2xl font-semibold text-emerald-400">${stats.routeOdometerMiles}</span>
+                        </div>` : ''}
+                        
+                        ${stats.routeDurationMin ? `
+                        <div class="pt-2 border-t border-slate-700 flex justify-between items-center">
+                            <span class="text-slate-400">Full Route Duration</span>
+                            <span class="font-mono text-2xl font-semibold text-emerald-400">${formatDuration(stats.routeDurationMin)}</span>
+                        </div>` : ''}
+                    </div>
+                    
+                    <!-- Export -->
+                    <div class="pt-2">
+                        <button onclick="exportCurrentRide()" 
+                                class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 transition font-semibold rounded-3xl flex items-center justify-center gap-x-3 shadow-lg">
+                            <i class="fa-solid fa-download"></i>
+                            <span>EXPORT RIDE TO CSV</span>
+                        </button>
+                        <p class="text-center text-xs text-slate-500 mt-3">Opens perfectly in Excel or Google Sheets</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== EVENT HANDLERS & ACTIONS ====================
+        let deleteListenerAttached = false;
+
+        function attachGlobalListeners() {
+            if (deleteListenerAttached) return;
+            const appEl = document.getElementById('app');
+            if (!appEl) return;
+            deleteListenerAttached = true;
+
+            appEl.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('[data-delete-stop]');
+                if (!deleteBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                const rideId = deleteBtn.getAttribute('data-ride-id');
+                const stopId = deleteBtn.getAttribute('data-stop-id');
+                if (rideId && stopId) deleteStopConfirm(rideId, stopId);
+            }, true);
+        }
+
+        function attachRouteTimingListeners() {
+            ['route-start', 'route-end', 'route-start-odo', 'route-end-odo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el || el.dataset.routePersistBound) return;
+                el.dataset.routePersistBound = '1';
+                el.addEventListener('change', () => {
+                    persistRouteTimingFromInputs({ silent: true });
+                });
+            });
+        }
+
+        function switchTab(tab) {
+            state.currentTab = tab;
+            renderApp();
+        }
+
+        function goHome() {
+            state.currentRideId = null;
+            state.currentTab = 'stops';
+            renderApp();
+        }
+
+        function openRideDetail(rideId) {
+            state.currentRideId = rideId;
+            state.currentTab = 'stops';
+            renderApp();
+        }
+
+        function startNewRide() {
+            // Show create ride modal
+            const modalHTML = `
+                <div class="fixed inset-0 bg-black/70 z-[90] flex items-end sm:items-center justify-center" onclick="closeModal()">
+                    <div onclick="event.stopImmediatePropagation()" class="bg-slate-900 w-full sm:w-[440px] sm:rounded-3xl sm:m-4 rounded-t-3xl p-6 modal border border-slate-700">
+                        <div class="flex justify-between items-center mb-5">
+                            <span class="font-semibold text-xl">Start New Ride</span>
+                            <button onclick="closeModal()" class="text-2xl leading-none text-slate-400 hover:text-white">&times;</button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="form-label">Station / Zone</label>
+                                    <input id="new-station" type="text" value="" placeholder="Station / zone" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                                </div>
+                                <div>
+                                    <label class="form-label">Work Area #</label>
+                                    <input id="new-workarea" type="text" value="" placeholder="Work area" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3 font-mono">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">CSP Business Name</label>
+                                <input id="new-csp" type="text" value="" placeholder="CSP business name" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="form-label">Vehicle</label>
+                                    <input id="new-vehicle" type="text" value="" placeholder="Vehicle type" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                                </div>
+                                <div>
+                                    <label class="form-label">Driver Name</label>
+                                    <input id="new-driver" type="text" value="" placeholder="Driver name" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Manager / Coordinator</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input id="new-manager" type="text" value="" placeholder="Manager" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                                    <input id="new-coordinator" type="text" value="" placeholder="Coordinator" class="field-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Date</label>
+                                <input id="new-date" type="date" value="${new Date().toISOString().split('T')[0]}" class="time-input w-full bg-slate-950 border border-slate-600 rounded-2xl px-4 py-3">
+                            </div>
+                            
+                            <div class="pt-4 flex gap-3">
+                                <button onclick="createNewRideFromForm()" 
+                                        class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 font-semibold rounded-2xl">
+                                    START RIDE
+                                </button>
+                                <button onclick="closeModal()" class="px-8 py-3.5 bg-slate-700 hover:bg-slate-600 font-semibold rounded-2xl">CANCEL</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalHTML);
+        }
+
+        function createNewRideFromForm() {
+            const data = {
+                station: document.getElementById('new-station').value.trim(),
+                workArea: document.getElementById('new-workarea').value.trim(),
+                cspBusinessName: document.getElementById('new-csp').value.trim(),
+                vehicleType: document.getElementById('new-vehicle').value.trim(),
+                driver: document.getElementById('new-driver').value.trim(),
+                manager: document.getElementById('new-manager').value.trim(),
+                coordinator: document.getElementById('new-coordinator').value.trim(),
+                date: document.getElementById('new-date').value
+            };
+            
+            const newRide = createRide(data);
+            closeModal();
+            
+            // Immediately open the new ride in detail view
+            state.currentRideId = newRide.id;
+            state.currentTab = 'info'; // Start on info tab to fill details
+            renderApp();
+            
+            showToast('New ride created. Fill in details and import manifest.', 'success');
+        }
+
+        function saveRideInfo() {
+            const ride = state.rides.find(r => r.id === state.currentRideId);
+            if (!ride) return;
+            
+            const updates = {
+                station: document.getElementById('edit-station').value.trim(),
+                workArea: document.getElementById('edit-workarea').value.trim(),
+                cspBusinessName: document.getElementById('edit-csp').value.trim(),
+                vehicleType: document.getElementById('edit-vehicle').value.trim(),
+                manager: document.getElementById('edit-manager').value.trim(),
+                coordinator: document.getElementById('edit-coordinator').value.trim(),
+                date: document.getElementById('edit-date').value,
+                notes: document.getElementById('edit-notes').value.trim()
+            };
+            
+            updateRide(state.currentRideId, updates);
+            showToast('Ride info saved', 'success');
+            renderApp();
+        }
+
+        function persistRouteTimingFromInputs(options = {}) {
+            const { silent = false, reRender = false } = options;
+            if (!state.currentRideId) return;
+
+            const startInput = document.getElementById('route-start');
+            const endInput = document.getElementById('route-end');
+            const startOdoInput = document.getElementById('route-start-odo');
+            const endOdoInput = document.getElementById('route-end-odo');
+
+            const updates = {
+                routeStartTime: formatDateTimeLocalValue(startInput?.value) || null,
+                routeEndTime: formatDateTimeLocalValue(endInput?.value) || null,
+                routeStartOdometer: startOdoInput?.value !== '' ? parseInt(startOdoInput.value, 10) || null : null,
+                routeEndOdometer: endOdoInput?.value !== '' ? parseInt(endOdoInput.value, 10) || null : null
+            };
+
+            updateRide(state.currentRideId, updates);
+            if (!silent) showToast('Route updated', 'success');
+            if (reRender) renderApp();
+        }
+
+        function setRouteTimeNow(which) {
+            const inputId = which === 'start' ? 'route-start' : 'route-end';
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            input.value = getNowForInput();
+            persistRouteTimingFromInputs({ silent: true });
+            showToast(which === 'start' ? 'Route start lapped' : 'Route end lapped', 'success');
+        }
+
+        function saveRouteTiming() {
+            persistRouteTimingFromInputs({ reRender: true });
+        }
+
+        function endRide(rideId) {
+            if (!confirm('End this ride? This will set the route end time to now.')) return;
+            
+            const nowStr = getNowForInput();
+            setRouteTiming(rideId, 'end', nowStr);
+            
+            showToast('Ride marked as completed', 'success');
+            renderApp();
+        }
+
+        function deleteRideConfirm(rideId) {
+            showConfirmModal(
+                'Are you sure you want to permanently delete this ride and all its stops?',
+                () => {
+                    deleteRide(rideId);
+                    showToast('Ride deleted', 'info');
+                    renderApp();
+                },
+                'Delete Ride'
+            );
+        }
+
+        function deleteStopConfirm(rideId, stopId) {
+            if (!rideId || !stopId) {
+                console.error('Missing rideId or stopId');
+                return;
+            }
+            
+            showConfirmModal(
+                'Delete this stop from the ride?',
+                () => {
+                    deleteStop(rideId, stopId);
+                    showToast('Stop deleted', 'info');
+                    renderApp();
+                },
+                'Delete Stop'
+            );
+        }
+
+        async function handleManifestUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const isExcel = /\.xlsx?$/i.test(file.name) ||
+                file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+            try {
+                let parsedStops;
+                if (isExcel) {
+                    showToast('Reading Excel manifest...', 'info');
+                    parsedStops = parseXLSX(await file.arrayBuffer());
+                } else {
+                    parsedStops = parseCSV(await file.text());
+                }
+
+                if (parsedStops.length === 0) {
+                    showToast(isExcel
+                        ? 'No stops found in Excel file. Use a FedEx route manifest (.xlsx).'
+                        : 'No valid stops found in CSV. Check headers (Address, Zip, StopType, Packages)', 'error');
+                    return;
+                }
+
+                const count = importManifestStops(state.currentRideId, parsedStops);
+                showToast(`Imported ${count} stops from ${isExcel ? 'Excel' : 'CSV'} manifest`, 'success');
+
+                state.currentTab = 'stops';
+                renderApp();
+            } catch (err) {
+                console.error(err);
+                showToast(isExcel ? 'Failed to read Excel manifest' : 'Failed to parse CSV file', 'error');
+            }
+
+            event.target.value = '';
+        }
+
+        function openStopForm(stopId = null) {
+            const ride = state.rides.find(r => r.id === state.currentRideId);
+            if (!ride) return;
+            
+            let stop = null;
+            if (stopId) {
+                stop = ride.stops.find(s => s.id === stopId);
+            }
+            
+            const unstarted = getUnstartedStops(ride);
+            
+            let pickHTML = '';
+            if (unstarted.length > 0 && !stopId) {
+                pickHTML = `
+                    <div class="mb-4">
+                        <div class="section-label text-slate-300 mb-2 px-1">PICK FROM MANIFEST (${unstarted.length} remaining)</div>
+                        <div class="flex flex-wrap gap-2 max-h-[120px] overflow-auto pb-1">
+                            ${unstarted.map(u => `
+                                <button onclick="selectManifestStop('${u.id}', this)" 
+                                        class="text-left px-3 py-2 bg-slate-700 hover:bg-blue-600 active:bg-blue-500 field-meta rounded-2xl flex-shrink-0">
+                                    <span class="field-text">${u.address}</span>
+                                    <span class="text-emerald-400 ml-1">+${u.packagesDelivered}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const isNew = !stop;
+            const title = isNew ? 'Add New Stop' : 'Edit Stop';
+            
+            const modalContent = `
+                <div class="fixed inset-0 bg-black/70 z-[90] flex items-end" onclick="closeModal()">
+                    <div onclick="event.stopImmediatePropagation()" class="bottom-sheet bg-slate-900 w-full rounded-t-3xl border-t border-slate-700 max-h-[92dvh] overflow-hidden flex flex-col">
+                        <!-- Sheet Header -->
+                        <div class="px-5 pt-5 pb-3 flex items-center justify-between border-b border-slate-700 flex-shrink-0">
+                            <span class="font-semibold text-xl">${title}</span>
+                            <button onclick="closeModal()" class="text-3xl leading-none text-slate-400 hover:text-white px-2">&times;</button>
+                        </div>
+                        
+                        <div class="overflow-auto flex-1 p-5 space-y-5">
+                            ${pickHTML}
+                            
+                            <!-- Form Fields -->
+                            <div class="space-y-4">
+                                <!-- Times -->
+                                <div>
+                                    <div class="section-label px-1">ARRIVE & DEPART TIMES</div>
+                                    
+                                    <div class="grid grid-cols-1 gap-3">
+                                        <div>
+                                            <label class="form-label">ARRIVE TIME</label>
+                                            <div class="flex gap-2 items-stretch">
+                                                <input type="text" id="stop-arrive" value="${stop?.arrive ? formatStopTimeDisplay(stop.arrive) : ''}"
+                                                       placeholder="Tap LAP to time stamp"
+                                                       class="time-input flex-1 bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-3 py-2.5"
+                                                       autocomplete="off" spellcheck="false" inputmode="text">
+                                                <button type="button" onclick="setStopTimeNow('arrive')" 
+                                                        class="px-3 text-xs font-bold bg-slate-700 hover:bg-slate-600 rounded-2xl whitespace-nowrap">LAP</button>
+                                            </div>
+                                            <div class="field-meta mt-1 px-1">Editable — e.g. 2:34:17 PM</div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="form-label">DEPART TIME</label>
+                                            <div class="flex gap-2 items-stretch">
+                                                <input type="text" id="stop-depart" value="${stop?.depart ? formatStopTimeDisplay(stop.depart) : ''}"
+                                                       placeholder="Tap LAP to time stamp"
+                                                       class="time-input flex-1 bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-3 py-2.5"
+                                                       autocomplete="off" spellcheck="false" inputmode="text">
+                                                <button type="button" onclick="setStopTimeNow('depart')" 
+                                                        class="px-3 text-xs font-bold bg-slate-700 hover:bg-slate-600 rounded-2xl whitespace-nowrap">LAP</button>
+                                            </div>
+                                            <div class="field-meta mt-1 px-1">Editable — e.g. 2:34:17 PM</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Location -->
+                                <div>
+                                    <div class="section-label px-1">LOCATION</div>
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="form-label">Address</label>
+                                            <input type="text" id="stop-address" value="${stop?.address || ''}" 
+                                                   class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-2.5" placeholder="Street address">
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-3 gap-3">
+                                            <div class="col-span-2">
+                                                <label class="form-label">ZIP Code</label>
+                                                <input type="text" id="stop-zip" value="${stop?.zip || ''}" 
+                                                       class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-2.5 font-mono">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="form-label">Type</label>
+                                                <select id="stop-type" class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-3 py-2.5">
+                                                    ${getStopTypeOptions(stop?.stopType)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="form-label">Walking Distance</label>
+                                            <select id="stop-walk" class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-3 py-2.5">
+                                                ${getWalkDistanceOptions(stop?.walkDistance)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Work Details -->
+                                <div>
+                                    <div class="section-label px-1">WORK PERFORMED</div>
+                                    
+                                    <div>
+                                        <label class="form-label">Packages Delivered</label>
+                                        <input type="number" id="stop-packages" value="${stop?.packagesDelivered || 0}" 
+                                               class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-2.5 font-mono">
+                                    </div>
+                                    
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label flex items-center justify-between">
+                                        <span>Driver Release</span>
+                                        <span id="release-label" class="field-badge font-mono px-2 py-0.5 rounded ${stop?.driverRelease ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600 text-slate-300'}">${stop?.driverRelease ? 'YES' : 'NO'}</span>
+                                    </label>
+                                    
+                                    <div onclick="toggleDriverRelease(this)" class="mt-1 w-14 h-8 bg-slate-700 rounded-full p-1 cursor-pointer flex ${stop?.driverRelease ? 'justify-end' : ''}">
+                                        <div class="w-6 h-6 bg-white rounded-full shadow transition-all ${stop?.driverRelease ? 'bg-emerald-400' : ''}"></div>
+                                    </div>
+                                    <input type="hidden" id="stop-release" value="${stop?.driverRelease ? 'true' : 'false'}">
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label">Observations / Notes</label>
+                                    <textarea id="stop-obs" rows="3" class="field-input w-full bg-slate-950 border border-slate-600 focus:border-blue-500 rounded-2xl px-4 py-2.5">${stop?.observations || ''}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer Actions -->
+                        <div class="p-5 border-t border-slate-700 flex-shrink-0 bg-slate-900 flex gap-3">
+                            ${stopId ? `
+                                <button onclick="deleteCurrentStop('${stopId}')" 
+                                        class="px-5 text-red-400 hover:bg-red-950/60 active:bg-red-950 font-semibold rounded-2xl flex items-center justify-center gap-x-2">
+                                    <i class="fa-solid fa-trash"></i>
+                                    <span>DELETE</span>
+                                </button>
+                            ` : ''}
+                            
+                            <button onclick="saveStopForm('${stopId || ''}')" 
+                                    class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 font-semibold rounded-2xl text-sm">
+                                ${isNew ? 'ADD STOP TO RIDE' : 'SAVE CHANGES'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalContent, true);
+            
+            // Attach toggle handler after render
+            setTimeout(() => {
+                ['stop-arrive', 'stop-depart'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el || el.dataset.timeBlurBound) return;
+                    el.dataset.timeBlurBound = '1';
+                    el.addEventListener('blur', () => formatStopTimeInputField(id));
+                });
+            }, 50);
+        }
+
+        function setStopTimeNow(field) {
+            const input = document.getElementById(`stop-${field}`);
+            if (!input) return;
+            input.value = formatStopTimeDisplay(getNowForTimeInput());
+        }
+
+        function toggleDriverRelease(element) {
+            const hidden = document.getElementById('stop-release');
+            const label = document.getElementById('release-label');
+            
+            if (!hidden || !label) return;
+            
+            const isYes = hidden.value === 'true';
+            const newVal = !isYes;
+            
+            hidden.value = newVal.toString();
+            
+            if (newVal) {
+                element.classList.add('justify-end');
+                element.querySelector('div').classList.add('bg-emerald-400');
+                label.className = 'field-badge font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400';
+                label.textContent = 'YES';
+            } else {
+                element.classList.remove('justify-end');
+                element.querySelector('div').classList.remove('bg-emerald-400');
+                label.className = 'field-badge font-mono px-2 py-0.5 rounded bg-slate-600 text-slate-300';
+                label.textContent = 'NO';
+            }
+        }
+
+        function selectManifestStop(stopId, buttonEl) {
+            const ride = state.rides.find(r => r.id === state.currentRideId);
+            if (!ride) return;
+            
+            const manifestStop = ride.stops.find(s => s.id === stopId);
+            if (!manifestStop) return;
+            
+            // Fill the form fields
+            const fields = {
+                'stop-address': manifestStop.address,
+                'stop-zip': manifestStop.zip,
+                'stop-type': manifestStop.stopType,
+                'stop-packages': manifestStop.packagesDelivered,
+                'stop-walk': manifestStop.walkDistance || ''
+            };
+            
+            Object.keys(fields).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = fields[id] || '';
+            });
+            
+            // Highlight selected
+            document.querySelectorAll('.manifest-stop, button[onclick*="selectManifestStop"]').forEach(el => {
+                el.classList.remove('!bg-blue-600', 'ring-1', 'ring-blue-400');
+            });
+            if (buttonEl) {
+                buttonEl.classList.add('!bg-blue-600', 'ring-1', 'ring-blue-400');
+            }
+            
+            // Store reference that we're editing this specific manifest stop
+            window._selectedManifestStopId = stopId;
+        }
+
+        function saveStopForm(existingStopId) {
+            const rideId = state.currentRideId;
+            const ride = state.rides.find(r => r.id === rideId);
+            
+            const stopData = {
+                id: existingStopId || window._selectedManifestStopId || null,
+                arrive: normalizeStopTime(document.getElementById('stop-arrive').value.trim()) || null,
+                depart: normalizeStopTime(document.getElementById('stop-depart').value.trim()) || null,
+                address: document.getElementById('stop-address').value.trim(),
+                zip: document.getElementById('stop-zip').value.trim(),
+                stopType: document.getElementById('stop-type').value,
+                walkDistance: normalizeWalkDistance(document.getElementById('stop-walk').value),
+                packagesDelivered: parseInt(document.getElementById('stop-packages').value) || 0,
+                driverRelease: document.getElementById('stop-release').value === 'true',
+                observations: document.getElementById('stop-obs').value.trim()
+            };
+            
+            // Auto calc at-stop if both times present
+            addOrUpdateStop(rideId, stopData);
+            
+            // Clear selection
+            window._selectedManifestStopId = null;
+            
+            closeModal();
+            showToast(existingStopId ? 'Stop updated' : 'Stop added successfully', 'success');
+            renderApp();
+        }
+
+        function deleteCurrentStop(stopId) {
+            showConfirmModal(
+                'Delete this stop?',
+                () => {
+                    deleteStop(state.currentRideId, stopId);
+                    closeModal();
+                    showToast('Stop deleted', 'info');
+                    renderApp();
+                },
+                'Delete Stop'
+            );
+        }
+
+        function exportCurrentRide() {
+            const ride = state.rides.find(r => r.id === state.currentRideId);
+            if (!ride) return;
+            
+            const csvContent = generateRideCSV(ride);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const filename = `CSR_Ride_${ride.station.replace(/\s/g, '')}_${ride.date}.csv`;
+            
+            link.href = url;
+            link.download = filename;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('CSV exported. Open in Excel for best formatting.', 'success');
+        }
+
+        function showModal(html, isBottomSheet = false) {
+            closeModal(); // close any existing
+            
+            const modalContainer = document.createElement('div');
+            modalContainer.id = 'modal-root';
+            modalContainer.innerHTML = html;
+            document.body.appendChild(modalContainer);
+            
+            state.currentModal = modalContainer;
+            
+            // Prevent body scroll when modal open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal-root');
+            if (modal) {
+                modal.remove();
+            }
+            document.body.style.overflow = '';
+            state.currentModal = null;
+            window._selectedManifestStopId = null;
+            __confirmAction = null; // clear any pending confirm action
+        }
+
+        /**
+         * Custom confirmation modal (replaces native confirm())
+         * Works reliably even in sandboxed preview environments.
+         */
+        let __confirmAction = null;
+
+        function showConfirmModal(message, onConfirm, confirmText = 'Delete', cancelText = 'Cancel') {
+            const modalHTML = `
+                <div class="fixed inset-0 bg-black/70 z-[95] flex items-center justify-center p-6" onclick="closeModal()">
+                    <div onclick="event.stopImmediatePropagation()" 
+                         class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm modal shadow-2xl">
+                        
+                        <div class="p-6">
+                            <div class="flex items-start gap-x-4">
+                                <div class="w-12 h-12 flex-shrink-0 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                                    <i class="fa-solid fa-exclamation-triangle text-red-400 text-2xl"></i>
+                                </div>
+                                <div class="flex-1 pt-1">
+                                    <h3 class="font-semibold text-lg text-white">Confirm Action</h3>
+                                    <p class="text-slate-300 mt-2 text-[15px] leading-relaxed">${message}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex border-t border-slate-700">
+                            <button onclick="closeModal()" 
+                                    class="flex-1 py-4 text-sm font-semibold text-slate-300 hover:bg-slate-800 active:bg-slate-700 rounded-bl-3xl transition-colors">
+                                ${cancelText}
+                            </button>
+                            <div class="w-px bg-slate-700"></div>
+                            <button onclick="__runConfirmAction()" 
+                                    class="flex-1 py-4 text-sm font-semibold text-red-400 hover:bg-red-950/60 active:bg-red-950 rounded-br-3xl transition-colors">
+                                ${confirmText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalHTML);
+            __confirmAction = onConfirm;
+        }
+
+        function __runConfirmAction() {
+            const action = __confirmAction;
+            closeModal();
+            if (typeof action === 'function') {
+                action();
+            }
+        }
+
+        function initializeApp() {
+            loadState();
+            
+            // Render initial view
+            renderApp();
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    const homeScreen = !state.currentRideId;
+                    if (homeScreen) {
+                        startNewRide();
+                    } else {
+                        openStopForm();
+                    }
+                }
+                
+                if (e.key.toLowerCase() === 'escape') {
+                    const modal = document.getElementById('modal-root');
+                    if (modal) {
+                        closeModal();
+                    } else if (state.currentRideId) {
+                        goHome();
+                    }
+                }
+            });
+            
+            // Show welcome toast on first load with sample data
+            setTimeout(() => {
+                if (state.rides.length === 0 && storageAvailable) {
+                    try {
+                        const hasSeen = localStorage.getItem('csr_welcome_shown');
+                        if (!hasSeen) {
+                            showToast('Tap NEW RIDE to start logging your first route.', 'info');
+                            localStorage.setItem('csr_welcome_shown', 'true');
+                        }
+                    } catch (e) {}
+                }
+            }, 1200);
+            
+            console.log('%c[CSR RideLog] App initialized successfully', 'color:#64748b');
+        }
+
+        // Boot the application
+        window.onload = initializeApp;
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => {
+                    console.warn('[CSR RideLog] Service worker registration failed', err);
+                });
+            });
+        }
+        
+        // Expose some functions for debugging if needed
+        window.CSRRideLog = { state, renderApp, seedSampleData };
+    </script>
+</body>
+</html>
