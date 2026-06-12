@@ -1,4 +1,4 @@
-const CACHE_NAME = 'csr-ridelog-v36';
+const CACHE_NAME = 'csr-ridelog-v37';
 const PRECACHE_URLS = [
   './',
   './index.html',
