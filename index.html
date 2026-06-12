@@ -49,6 +49,12 @@
             --stop-active: #334155;
             --manifest-hover: #334155;
             --accent-section: #60a5fa;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --header-main-height: 4.5rem;
+            --header-ride-height: 4.5rem;
         }
 
         [data-theme="light"] {
@@ -102,8 +108,6 @@
             font-feature-settings: "kern" "liga" "tnum";
             font-size: 15px;
             line-height: 1.5;
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
         }
         
         .font-display {
@@ -143,6 +147,31 @@
 
         .theme-toggle-btn:active {
             background: var(--bg-elevated);
+        }
+
+        .app-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            padding-top: calc(1rem + var(--safe-top));
+            padding-bottom: 1rem;
+            padding-left: max(1.25rem, var(--safe-left));
+            padding-right: max(1.25rem, var(--safe-right));
+        }
+
+        .sticky-below-main {
+            top: calc(var(--header-main-height) + var(--safe-top));
+        }
+
+        .sticky-below-ride {
+            top: calc(var(--header-main-height) + var(--header-ride-height) + var(--safe-top));
+        }
+
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .app-container {
+                padding-left: var(--safe-left);
+                padding-right: var(--safe-right);
+            }
         }
 
         /* Essential Tailwind utility fallbacks (for production, no CDN) */
@@ -252,8 +281,8 @@
         .min-h-screen { min-height: 100vh; min-height: 100dvh; }
         .sticky { position: sticky; }
         .top-0 { top: 0; }
-        .top-\[65px\] { top: 65px; }
-        .top-\[129px\] { top: 129px; }
+        .top-\[65px\] { top: calc(4.5rem + var(--safe-top, 0px)); }
+        .top-\[129px\] { top: calc(9rem + var(--safe-top, 0px)); }
         .left-1\/2 { left: 50%; }
         .-translate-x-1\/2 { transform: translateX(-50%); }
         .bottom-6 { bottom: 1.5rem; }
@@ -650,7 +679,7 @@
 <body class="bg-slate-950 text-white">
     <div class="app-container mx-auto min-h-screen flex flex-col">
         <!-- Top Navigation -->
-        <div class="bg-slate-900 border-b border-slate-800 px-5 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div class="app-topbar bg-slate-900 border-b border-slate-800 flex items-center justify-between">
             <div class="flex items-center gap-x-3 min-w-0 flex-1">
                 <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0">
                     <i class="fa-solid fa-truck text-white text-2xl"></i>
@@ -676,7 +705,7 @@
         </div>
 
         <!-- Bottom Safe Area for mobile -->
-        <div class="bg-slate-900" style="height: max(1.25rem, env(safe-area-inset-bottom));"></div>
+        <div class="bg-slate-900" style="height: max(1.25rem, var(--safe-bottom));"></div>
     </div>
 
     <!-- Toast Container -->
@@ -1654,7 +1683,7 @@
             
             let html = `
                 <!-- Ride Header -->
-                <div class="bg-slate-900 border-b border-slate-700 px-5 py-4 sticky top-[65px] z-40 ride-detail-header">
+                <div class="bg-slate-900 border-b border-slate-700 px-5 py-4 sticky sticky-below-main z-40 ride-detail-header">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-x-3 min-w-0 flex-1">
                             <button onclick="goHome()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white active:bg-slate-800 rounded-2xl">
@@ -1687,7 +1716,7 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="bg-slate-900 border-b border-slate-700 px-2 flex sticky top-[129px] z-40">
+                <div class="bg-slate-900 border-b border-slate-700 px-2 flex sticky sticky-below-ride z-40">
                     <div onclick="switchTab('stops')" class="nav-tab flex-1 text-center py-3 text-sm cursor-pointer ${state.currentTab === 'stops' ? 'active' : ''}">
                         <i class="fa-solid fa-list-check mr-2"></i>STOPS
                     </div>
